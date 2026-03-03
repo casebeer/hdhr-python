@@ -7,35 +7,35 @@ from enum import Enum
 # https://github.com/Silicondust/libhdhomerun/blob/master/hdhomerun_device.c
 
 class ControlFields(Enum):
-    IR_TARGET = bytearray("/ir/target\0", encoding="ascii")
-    LINEUP_LOCATION = bytearray("/lineup/location\0", encoding="ascii")
-    SYS_MODEL = bytearray("/sys/model\0", encoding="ascii")
-    SYS_HWMODEL = bytearray("/sys/hwmodel\0", encoding="ascii")
-    SYS_FEATURES = bytearray("/sys/features\0", encoding="ascii")
-    SYS_VERSION = bytearray("/sys/version\0", encoding="ascii")
-    SYS_COPYRIGHT = bytearray("/sys/copyright\0", encoding="ascii")
-    SYS_DEBUG = bytearray("/sys/debug\0", encoding="ascii")
-    SYS_BOOT = bytearray("/sys/boot\0", encoding="ascii")
-    SYS_DVBC_MODULATION = bytearray("/sys/dvbc_modulation\0", encoding="ascii")
-    OOB_STATUS = bytearray("/oob/status\0", encoding="ascii")
-    OOB_PLOTSAMPLE = bytearray("/oob/plotsample\0", encoding="ascii")
+    IR_TARGET = "/ir/target"
+    LINEUP_LOCATION = "/lineup/location"
+    SYS_MODEL = "/sys/model"
+    SYS_HWMODEL = "/sys/hwmodel"
+    SYS_FEATURES = "/sys/features"
+    SYS_VERSION = "/sys/version"
+    SYS_COPYRIGHT = "/sys/copyright"
+    SYS_DEBUG = "/sys/debug"
+    SYS_BOOT = "/sys/boot"
+    SYS_DVBC_MODULATION = "/sys/dvbc_modulation"
+    OOB_STATUS = "/oob/status"
+    OOB_PLOTSAMPLE = "/oob/plotsample"
 
-    SYS_RESTART = bytearray("/sys/restart\0", encoding="ascii")
+    SYS_RESTART = "/sys/restart"
 
 class TunerFields(Enum):
-    TUNER0_CHANNEL = bytearray("/tuner0/channel\0", encoding="ascii")
-    TUNER0_VCHANNEL = bytearray("/tuner0/vchannel\0", encoding="ascii")
-    TUNER0_CHANNELMAP = bytearray("/tuner0/channelmap\0", encoding="ascii")
-    TUNER0_FILTER = bytearray("/tuner0/filter\0", encoding="ascii")
-    TUNER0_PROGRAM = bytearray("/tuner0/program\0", encoding="ascii")
-    TUNER0_TARGET = bytearray("/tuner0/target\0", encoding="ascii")
-    TUNER0_STATUS = bytearray("/tuner0/status\0", encoding="ascii")
-    TUNER0_VSTATUS = bytearray("/tuner0/vstatus\0", encoding="ascii")
-    TUNER0_STREAMINFO = bytearray("/tuner0/streaminfo\0", encoding="ascii")
-    TUNER0_PLPINFO = bytearray("/tuner0/plpinfo\0", encoding="ascii")
-    TUNER0_PLOTSAMPLE = bytearray("/tuner0/plotsample\0", encoding="ascii")
-    TUNER0_DEBUG = bytearray("/tuner0/debug\0", encoding="ascii")
-    TUNER0_LOCKKEY = bytearray("/tuner0/lockkey\0", encoding="ascii")
+    TUNER0_CHANNEL = "/tuner0/channel"
+    TUNER0_VCHANNEL = "/tuner0/vchannel"
+    TUNER0_CHANNELMAP = "/tuner0/channelmap"
+    TUNER0_FILTER = "/tuner0/filter"
+    TUNER0_PROGRAM = "/tuner0/program"
+    TUNER0_TARGET = "/tuner0/target"
+    TUNER0_STATUS = "/tuner0/status"
+    TUNER0_VSTATUS = "/tuner0/vstatus"
+    TUNER0_STREAMINFO = "/tuner0/streaminfo"
+    TUNER0_PLPINFO = "/tuner0/plpinfo"
+    TUNER0_PLOTSAMPLE = "/tuner0/plotsample"
+    TUNER0_DEBUG = "/tuner0/debug"
+    TUNER0_LOCKKEY = "/tuner0/lockkey"
 
 #/sys/features
 #/sys/hwmodel
