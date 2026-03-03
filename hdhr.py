@@ -59,12 +59,10 @@ class PayloadField:
 
         valueOffset = 2 if length <= 127 else 3
 
-        #value = data[valueOffset:valueOffset + valueLength]
         value = data[valueOffset:valueOffset + length]
         logger.debug(f"PayloadField({tag}, {length}, {value})")
         return cls(
             tag=PayloadTag(tag),
-            #valueLength=valueLength,
             length=length, # length of value only, not whole field
             value=value,
         )
@@ -76,7 +74,6 @@ class PayloadField:
         data = bytearray(fieldLength)
         data[0:1] = struct.pack('B', self.tag.value)
         data[1:1 + lengthLength] = PayloadField.writeLength(valueLength)
-        #data[1:1 + lengthLength] = PayloadField.writeLength(fieldLength)
         data[1 + lengthLength:1 + lengthLength + valueLength] = self.value
         return data
 
@@ -99,7 +96,7 @@ class PayloadField:
     def writeLength(length):
         if length > 127:
             # two byte length field
-            return struct.pack('BB', (length & 0x7f) | 0x80, (length & 0xff80) >> 7)
+            return struct.pack('BB', (length & 0x7f) | 0x80, (length >> 7) & 0xff)
         else:
             # one byte length field
             return struct.pack('B', length & 0x7f)
