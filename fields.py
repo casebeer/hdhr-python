@@ -7,6 +7,9 @@ from enum import Enum
 # https://github.com/Silicondust/libhdhomerun/blob/master/hdhomerun_device.c
 
 class ControlFields(Enum):
+    '''
+    Enum storing non-templated Control Protocol API endpoint field names
+    '''
     IR_TARGET = "/ir/target"
     LINEUP_LOCATION = "/lineup/location"
     SYS_MODEL = "/sys/model"
@@ -23,19 +26,25 @@ class ControlFields(Enum):
     SYS_RESTART = "/sys/restart"
 
 class TunerFields(Enum):
-    TUNER0_CHANNEL = "/tuner0/channel"
-    TUNER0_VCHANNEL = "/tuner0/vchannel"
-    TUNER0_CHANNELMAP = "/tuner0/channelmap"
-    TUNER0_FILTER = "/tuner0/filter"
-    TUNER0_PROGRAM = "/tuner0/program"
-    TUNER0_TARGET = "/tuner0/target"
-    TUNER0_STATUS = "/tuner0/status"
-    TUNER0_VSTATUS = "/tuner0/vstatus"
-    TUNER0_STREAMINFO = "/tuner0/streaminfo"
-    TUNER0_PLPINFO = "/tuner0/plpinfo"
-    TUNER0_PLOTSAMPLE = "/tuner0/plotsample"
-    TUNER0_DEBUG = "/tuner0/debug"
-    TUNER0_LOCKKEY = "/tuner0/lockkey"
+    '''
+    Enum storing tuner-specific Control Protocl endpoint template strings
+
+    These values are *template strings* whcich must be format()ed with a
+    tunerNumber integer in {0, 1, 2, 3} before use.
+    '''
+    CHANNEL = "/tuner{tunerNumber:d}/channel"
+    VCHANNEL = "/tuner{tunerNumber:d}/vchannel"
+    CHANNELMAP = "/tuner{tunerNumber:d}/channelmap"
+    FILTER = "/tuner{tunerNumber:d}/filter"
+    PROGRAM = "/tuner{tunerNumber:d}/program"
+    TARGET = "/tuner{tunerNumber:d}/target"
+    STATUS = "/tuner{tunerNumber:d}/status"
+    VSTATUS = "/tuner{tunerNumber:d}/vstatus"
+    STREAMINFO = "/tuner{tunerNumber:d}/streaminfo"
+    PLPINFO = "/tuner{tunerNumber:d}/plpinfo"
+    PLOTSAMPLE = "/tuner{tunerNumber:d}/plotsample"
+    DEBUG = "/tuner{tunerNumber:d}/debug"
+    LOCKKEY = "/tuner{tunerNumber:d}/lockkey"
 
 #/sys/features
 #/sys/hwmodel

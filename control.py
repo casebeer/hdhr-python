@@ -119,9 +119,11 @@ if __name__ == '__main__':
     data = {}
     for field in fields.ControlFields:
         data.update(client.get(field.value))
+
     # n.b. need to get number of tuners via Discovery API
-    for field in fields.TunerFields:
-        data.update(client.get(field.value))
+    for tunerNumber in (0, 1):
+        for field in fields.TunerFields:
+            data.update(client.get(field.value.format(tunerNumber=tunerNumber)))
     pprint.pprint(data)
 
     # restart device
