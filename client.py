@@ -12,13 +12,13 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
 
     payload = hdhr.Payload(
         fields=[hdhr.PayloadField(
-            tag=hdhr.PayloadTag.HDHOMERUN_TAG_GETSET_NAME,
+            tag=hdhr.PayloadTag.GETSET_NAME,
             value=bytearray("/sys/version\0", encoding="ascii"),
         )]
     )
 
     packet = hdhr.Packet(
-        packetType=hdhr.PacketType.HDHOMERUN_TYPE_GETSET_REQ,
+        packetType=hdhr.PacketType.GETSET_REQ,
         payload=payload,
     )
     print("Sending")

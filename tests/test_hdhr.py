@@ -24,19 +24,19 @@ class TestPacket(unittest.TestCase):
     def test_parseVersionResponse(self):
         packet = hdhr.Packet.parse(self.versionResponse)
 
-        self.assertEqual(packet.packetType, hdhr.PacketType.HDHOMERUN_TYPE_GETSET_RPY)
+        self.assertEqual(packet.packetType, hdhr.PacketType.GETSET_RPY)
 
-        self.assertEqual(packet.payload.fields[0].tag, hdhr.PayloadTag.HDHOMERUN_TAG_GETSET_NAME)
+        self.assertEqual(packet.payload.fields[0].tag, hdhr.PayloadTag.GETSET_NAME)
         self.assertEqual(packet.payload.fields[0].value, b"/sys/version\00")
 
-        self.assertEqual(packet.payload.fields[1].tag, hdhr.PayloadTag.HDHOMERUN_TAG_GETSET_VALUE)
+        self.assertEqual(packet.payload.fields[1].tag, hdhr.PayloadTag.GETSET_VALUE)
         self.assertEqual(packet.payload.fields[1].value, b"20250623\00")
 
     def test_parseErrorResponse(self):
         packet = hdhr.Packet.parse(self.errorResponse)
 
-        self.assertEqual(packet.packetType, hdhr.PacketType.HDHOMERUN_TYPE_GETSET_RPY)
-        self.assertEqual(packet.payload.fields[0].tag, hdhr.PayloadTag.HDHOMERUN_TAG_ERROR_MESSAGE)
+        self.assertEqual(packet.packetType, hdhr.PacketType.GETSET_RPY)
+        self.assertEqual(packet.payload.fields[0].tag, hdhr.PayloadTag.ERROR_MESSAGE)
 
 if __name__ == '__main__':
     unittest.main()

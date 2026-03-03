@@ -14,27 +14,27 @@ logger = logging.getLogger(__name__)
 
 
 class PacketType(Enum):
-    HDHOMERUN_TYPE_DISCOVER_REQ = 0x0002
-    HDHOMERUN_TYPE_DISCOVER_RPY = 0x0003
-    HDHOMERUN_TYPE_GETSET_REQ = 0x0004
-    HDHOMERUN_TYPE_GETSET_RPY = 0x0005
-    HDHOMERUN_TYPE_UPGRADE_REQ = 0x0006
-    HDHOMERUN_TYPE_UPGRADE_RPY = 0x0007
+    DISCOVER_REQ = 0x0002
+    DISCOVER_RPY = 0x0003
+    GETSET_REQ = 0x0004
+    GETSET_RPY = 0x0005
+    UPGRADE_REQ = 0x0006
+    UPGRADE_RPY = 0x0007
 
 class PayloadTag(Enum):
-    HDHOMERUN_TAG_DEVICE_TYPE = 0x01
-    HDHOMERUN_TAG_DEVICE_ID = 0x02
-    HDHOMERUN_TAG_GETSET_NAME = 0x03
-    HDHOMERUN_TAG_GETSET_VALUE = 0x04
-    HDHOMERUN_TAG_GETSET_LOCKKEY = 0x15
-    HDHOMERUN_TAG_ERROR_MESSAGE = 0x05
-    HDHOMERUN_TAG_TUNER_COUNT = 0x10
-    HDHOMERUN_TAG_LINEUP_URL = 0x27
-    HDHOMERUN_TAG_STORAGE_URL = 0x28
-    HDHOMERUN_TAG_DEVICE_AUTH_BIN_DEPRECATED = 0x29
-    HDHOMERUN_TAG_BASE_URL = 0x2A
-    HDHOMERUN_TAG_DEVICE_AUTH_STR = 0x2B
-    HDHOMERUN_TAG_STORAGE_ID = 0x2C
+    DEVICE_TYPE = 0x01
+    DEVICE_ID = 0x02
+    GETSET_NAME = 0x03
+    GETSET_VALUE = 0x04
+    GETSET_LOCKKEY = 0x15
+    ERROR_MESSAGE = 0x05
+    TUNER_COUNT = 0x10
+    LINEUP_URL = 0x27
+    STORAGE_URL = 0x28
+    DEVICE_AUTH_BIN_DEPRECATED = 0x29
+    BASE_URL = 0x2A
+    DEVICE_AUTH_STR = 0x2B
+    STORAGE_ID = 0x2C
 
 @dataclass
 class PayloadField:
@@ -182,8 +182,8 @@ class Packet:
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    #packet = unparsePacket(PacketType.HDHOMERUN_TYPE_GETSET_REQ.value, bytes())
-    packet = Packet(packetType=PacketType.HDHOMERUN_TYPE_GETSET_REQ, payload=Payload()).unparse()
+    #packet = unparsePacket(PacketType.GETSET_REQ.value, bytes())
+    packet = Packet(packetType=PacketType.GETSET_REQ, payload=Payload()).unparse()
     print(packet.hex())
     print(Packet.parse(packet))
     print(Packet.parse(packet).unparse().hex())

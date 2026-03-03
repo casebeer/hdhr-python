@@ -27,18 +27,18 @@ class ControlClient:
         payload = hdhr.Payload(
             fields=[
                 hdhr.PayloadField(
-                    tag=hdhr.PayloadTag.HDHOMERUN_TAG_GETSET_NAME,
+                    tag=hdhr.PayloadTag.GETSET_NAME,
                     value=requestField.value,
                 ),
                 hdhr.PayloadField(
-                    tag=hdhr.PayloadTag.HDHOMERUN_TAG_GETSET_VALUE,
+                    tag=hdhr.PayloadTag.GETSET_VALUE,
                     value=bytes(value + "\0", encoding="utf8"),
                 ),
             ]
         )
 
         packet = hdhr.Packet(
-            packetType=hdhr.PacketType.HDHOMERUN_TYPE_GETSET_REQ,
+            packetType=hdhr.PacketType.GETSET_REQ,
             payload=payload,
         )
 
@@ -48,13 +48,13 @@ class ControlClient:
     def get(self, requestField):
         payload = hdhr.Payload(
             fields=[hdhr.PayloadField(
-                tag=hdhr.PayloadTag.HDHOMERUN_TAG_GETSET_NAME,
+                tag=hdhr.PayloadTag.GETSET_NAME,
                 value=requestField.value,
             )]
         )
 
         packet = hdhr.Packet(
-            packetType=hdhr.PacketType.HDHOMERUN_TYPE_GETSET_REQ,
+            packetType=hdhr.PacketType.GETSET_REQ,
             payload=payload,
         )
 
@@ -68,14 +68,14 @@ class ControlClient:
         #print(response)
         responseFields = {}
         for field in response.payload.fields:
-            if field.tag == hdhr.PayloadTag.HDHOMERUN_TAG_GETSET_NAME:
+            if field.tag == hdhr.PayloadTag.GETSET_NAME:
                 name = field.value[:-1].decode('utf8')
-            elif field.tag == hdhr.PayloadTag.HDHOMERUN_TAG_GETSET_VALUE:
+            elif field.tag == hdhr.PayloadTag.GETSET_VALUE:
                 value = field.value[:-1].decode('utf8')
                 #pprint.pprint({ name: value })
                 responseFields[name] = value
                 name, value = None, None
-            elif field.tag == hdhr.PayloadTag.HDHOMERUN_TAG_ERROR_MESSAGE:
+            elif field.tag == hdhr.PayloadTag.ERROR_MESSAGE:
                 value = field.value[:-1].decode('utf8')
                 #pprint.pprint({ "ERROR": f"{requestField.name} {value}" })
                 logger.error(f"ERROR: {value} {requestField.name}")
