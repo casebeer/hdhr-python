@@ -234,4 +234,6 @@ if __name__ == '__main__':
     for response in [bytes.fromhex(r) for r in responses]:
         print(response.hex())
 
-    packet = Packet.parse(response)
+        packet = Packet.parse(response)
+
+        print(packet)
