@@ -1,7 +1,10 @@
 
 from enum import Enum
 
-# See https://www.silicondust.com/hdhomerun/hdhomerun_development.pdf
+# See
+# https://www.silicondust.com/hdhomerun/hdhomerun_development.pdf
+# https://github.com/Silicondust/libhdhomerun/blob/master/hdhomerun_channels.c
+# https://github.com/Silicondust/libhdhomerun/blob/master/hdhomerun_device.c
 
 class ControlFields(Enum):
     IR_TARGET = bytearray("/ir/target\0", encoding="ascii")
@@ -15,6 +18,9 @@ class ControlFields(Enum):
     SYS_BOOT = bytearray("/sys/boot\0", encoding="ascii")
     SYS_DVBC_MODULATION = bytearray("/sys/dvbc_modulation\0", encoding="ascii")
     OOB_STATUS = bytearray("/oob/status\0", encoding="ascii")
+    OOB_PLOTSAMPLE = bytearray("/oob/plotsample\0", encoding="ascii")
+
+class TunerFields(Enum):
     TUNER0_CHANNEL = bytearray("/tuner0/channel\0", encoding="ascii")
     TUNER0_VCHANNEL = bytearray("/tuner0/vchannel\0", encoding="ascii")
     TUNER0_CHANNELMAP = bytearray("/tuner0/channelmap\0", encoding="ascii")
@@ -26,7 +32,6 @@ class ControlFields(Enum):
     TUNER0_STREAMINFO = bytearray("/tuner0/streaminfo\0", encoding="ascii")
     TUNER0_PLPINFO = bytearray("/tuner0/plpinfo\0", encoding="ascii")
     TUNER0_PLOTSAMPLE = bytearray("/tuner0/plotsample\0", encoding="ascii")
-    OOB_PLOTSAMPLE = bytearray("/oob/plotsample\0", encoding="ascii")
     TUNER0_DEBUG = bytearray("/tuner0/debug\0", encoding="ascii")
     TUNER0_LOCKKEY = bytearray("/tuner0/lockkey\0", encoding="ascii")
 
