@@ -38,5 +38,14 @@ class TestPacket(unittest.TestCase):
         self.assertEqual(packet.packetType, hdhr.PacketType.GETSET_RPY)
         self.assertEqual(packet.payload.fields[0].tag, hdhr.PayloadTag.ERROR_MESSAGE)
 
+    def test_unparseVersionResponse(self):
+        packet = hdhr.Packet.parse(self.versionResponse)
+        self.assertEqual(packet.unparse(), self.versionResponse)
+
+    def test_unparseErrorResponse(self):
+        packet = hdhr.Packet.parse(self.errorResponse)
+        self.assertEqual(packet.unparse(), self.errorResponse)
+
+
 if __name__ == '__main__':
     unittest.main()
