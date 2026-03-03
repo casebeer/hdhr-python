@@ -163,39 +163,30 @@ class Packet:
             crc=crc,
             computedCrc=computedCrc,
         )
+
     def unparse(self):
-        return unparsePacket(self.packetType.value, self.payload.unparse())
+        payloadBytes = self.payload.unparse()
+        # compute payload length and packet CRC and return binary data
+        payloadLength = len(payloadBytes)
 
-#    def validate(self):
-#        # check length and crc32
-#        if self.payloadLength != len(self.payload):
-#            raise ValueError('Packet payload length does not match length in packet header')
-#        if self.crc != self.computedCrc:
-#            raise ValueError(
-#                f'Packet has invalid CRC: {self.crc}, expected {self.computedCrc}'
-#            )
+        packet = bytearray(payloadLength + 8)
+        packet[0:2] = struct.pack('>H', self.packetType.value)
+        packet[2:4] = struct.pack('>H', payloadLength)
+        packet[4:payloadLength + 4] = payloadBytes
 
+        packetCrc = zlib.crc32(packet[0:payloadLength + 4])
+        # hdhomerun_pkt.h says "Ethernet style 32-bit CRC)"
+        # but also little-endian, which may be contradictory
+        packet[payloadLength + 4:payloadLength + 8] =\
+        struct.pack('<I', packetCrc)
 
-def unparsePacket(packetType:int, payloadBytes: bytes):
-  # compute payload length and packet CRC and return binary data
-  payloadLength = len(payloadBytes)
+        return packet
 
-  packet = bytearray(payloadLength + 8)
-  packet[0:2] = struct.pack('>H', packetType)
-  packet[2:4] = struct.pack('>H', payloadLength)
-  packet[4:payloadLength + 4] = payloadBytes
-
-  packetCrc = zlib.crc32(packet[0:payloadLength + 4])
-  # hdhomerun_pkt.h says "Ethernet style 32-bit CRC)"
-  # but also little-endian, which may be contradictory
-  packet[payloadLength + 4:payloadLength + 8] =\
-    struct.pack('<I', packetCrc)
-
-  return packet
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    packet = unparsePacket(PacketType.HDHOMERUN_TYPE_GETSET_REQ.value, bytes())
+    #packet = unparsePacket(PacketType.HDHOMERUN_TYPE_GETSET_REQ.value, bytes())
+    packet = Packet(packetType=PacketType.HDHOMERUN_TYPE_GETSET_REQ, payload=Payload()).unparse()
     print(packet.hex())
     print(Packet.parse(packet))
     print(Packet.parse(packet).unparse().hex())
