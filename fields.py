@@ -20,6 +20,8 @@ class ControlFields(Enum):
     OOB_STATUS = bytearray("/oob/status\0", encoding="ascii")
     OOB_PLOTSAMPLE = bytearray("/oob/plotsample\0", encoding="ascii")
 
+    SYS_RESTART = bytearray("/sys/restart\0", encoding="ascii")
+
 class TunerFields(Enum):
     TUNER0_CHANNEL = bytearray("/tuner0/channel\0", encoding="ascii")
     TUNER0_VCHANNEL = bytearray("/tuner0/vchannel\0", encoding="ascii")

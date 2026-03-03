@@ -23,6 +23,28 @@ class ControlClient:
             data = sock.recv(MAX_PACKET_LENGTH)
             return hdhr.Packet.parse(data)
 
+    def set(self, requestField, value: str):
+        payload = hdhr.Payload(
+            fields=[
+                hdhr.PayloadField(
+                    tag=hdhr.PayloadTag.HDHOMERUN_TAG_GETSET_NAME,
+                    value=requestField.value,
+                ),
+                hdhr.PayloadField(
+                    tag=hdhr.PayloadTag.HDHOMERUN_TAG_GETSET_VALUE,
+                    value=bytes(value + "\0", encoding="utf8"),
+                ),
+            ]
+        )
+
+        packet = hdhr.Packet(
+            packetType=hdhr.PacketType.HDHOMERUN_TYPE_GETSET_REQ,
+            payload=payload,
+        )
+
+        response = self.request(packet)
+        return self.processResponse(response, requestField)
+
     def get(self, requestField):
         payload = hdhr.Payload(
             fields=[hdhr.PayloadField(
@@ -36,9 +58,13 @@ class ControlClient:
             payload=payload,
         )
 
+        response = self.request(packet)
+
+        return self.processResponse(response, requestField)
+
+    def processResponse(self, response, requestField):
         name = None
         value = None
-        response = self.request(packet)
         #print(response)
         responseFields = {}
         for field in response.payload.fields:
@@ -73,3 +99,6 @@ if __name__ == '__main__':
     for field in fields.TunerFields:
         data.update(client.get(field))
     pprint.pprint(data)
+
+    # restart device
+    #pprint.pprint(client.set(fields.ControlFields.SYS_RESTART, "self"))
