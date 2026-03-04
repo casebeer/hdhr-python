@@ -35,6 +35,15 @@ class PayloadTag(Enum):
     BASE_URL = 0x2A
     DEVICE_AUTH_STR = 0x2B
     STORAGE_ID = 0x2C
+    MULTI_TYPE = 0x2D
+
+class DeviceType(Enum):
+    TUNER = bytes.fromhex("00000001")
+    STORAGE = bytes.fromhex("00000005")
+    WILDCARD = bytes.fromhex("FFFFFFFF")
+
+class DeviceId(Enum):
+    WILDCARD = bytes.fromhex("FFFFFFFF")
 
 @dataclass
 class PayloadField:
@@ -60,7 +69,8 @@ class PayloadField:
         valueOffset = 2 if length <= 127 else 3
 
         value = data[valueOffset:valueOffset + length]
-        logger.debug(f"PayloadField({tag}, {length}, {value})")
+        logger.debug(f"PayloadField(0x{tag:x}, {length}, {value})")
+
         return cls(
             tag=PayloadTag(tag),
             length=length, # length of value only, not whole field
@@ -129,10 +139,9 @@ class Payload:
 class Packet:
     packetType: PacketType
     payload: Payload
-    payloadBytes: bytes = field(default_factory=bytes)
     payloadLength: int = 0
     crc: int = 0
-    computedCrc: int = 0
+    #computedCrc: int = 0
 
     @classmethod
     def parse(cls, data):
@@ -155,10 +164,8 @@ class Packet:
         return cls(
             packetType=PacketType(packetType),
             payloadLength=payloadLength,
-            payloadBytes=payloadBytes,
             payload=Payload.parse(payloadBytes),
             crc=crc,
-            computedCrc=computedCrc,
         )
 
     def unparse(self):
