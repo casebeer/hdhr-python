@@ -120,7 +120,7 @@ if __name__ == '__main__':
     for field in fields.ControlFields:
         data.update(client.get(field.value))
 
-    # n.b. need to get number of tuners via Discovery API
+    # n.b. need to get number of tuners via Discovery API or HTTP API /discover.json
     for tunerNumber in (0, 1):
         for field in fields.TunerFields:
             data.update(client.get(field.value.format(tunerNumber=tunerNumber)))
