@@ -29,19 +29,45 @@ From https://www.silicondust.com/hdhomerun/hdhomerun_development.pdf:
  /sys/features Display supported features
  /sys/version Display firmware version
  /sys/copyright Display firmware copyright
+
+Output of `get help` on HDTC-2US:
+
+    Supported configuration options:
+    /lineup/scan
+    /sys/copyright
+    /sys/debug
+    /sys/features
+    /sys/hwmodel
+    /sys/model
+    /sys/restart <resource>
+    /sys/version
+    /tuner<n>/channel <modulation>:<freq|ch>
+    /tuner<n>/channelmap <channelmap>
+    /tuner<n>/debug
+    /tuner<n>/filter "0x<nnnn>-0x<nnnn> [...]"
+    /tuner<n>/lockkey
+    /tuner<n>/program <program number>
+    /tuner<n>/status
+    /tuner<n>/plpinfo
+    /tuner<n>/streaminfo
+    /tuner<n>/target <ip>:<port>
+    /tuner<n>/vchannel <vchannel>
+
 '''
 
 class ControlFields(Enum):
     '''
     Enum storing non-templated Control Protocol API endpoint field names
     '''
-    SYS_MODEL = "/sys/model"
-    SYS_HWMODEL = "/sys/hwmodel"
-    SYS_FEATURES = "/sys/features"
-    SYS_VERSION = "/sys/version"
-    SYS_COPYRIGHT = "/sys/copyright"
-    SYS_DEBUG = "/sys/debug"
+    HELP = "help" # RO provides list of supported endpoints from device
+    SYS_MODEL = "/sys/model" # RO
+    SYS_HWMODEL = "/sys/hwmodel" # RO
+    SYS_VERSION = "/sys/version" # RO
+    SYS_COPYRIGHT = "/sys/copyright" # RO
+    SYS_DEBUG = "/sys/debug" # RO
+    SYS_FEATURES = "/sys/features" # Seems RO, but gives value format error not RO error on HDTC-2US
 
+    LINEUP_SCAN = "/lineup/scan" # write "start" or "abort"
     SYS_RESTART = "/sys/restart" # write "self" to reboot device
 
     IR_TARGET = "/ir/target" # error unknown getset variable on HDTC-2US
@@ -58,16 +84,28 @@ class TunerFields(Enum):
     These values are *template strings* whcich must be format()ed with a
     tunerNumber integer in {0, 1, 2, 3} before use.
     '''
-    CHANNEL = "/tuner{tunerNumber:d}/channel"
-    VCHANNEL = "/tuner{tunerNumber:d}/vchannel"
-    CHANNELMAP = "/tuner{tunerNumber:d}/channelmap"
-    FILTER = "/tuner{tunerNumber:d}/filter"
-    PROGRAM = "/tuner{tunerNumber:d}/program"
-    TARGET = "/tuner{tunerNumber:d}/target"
-    STATUS = "/tuner{tunerNumber:d}/status"
-    VSTATUS = "/tuner{tunerNumber:d}/vstatus" # error unknown getset variable on HDTC-2US
-    STREAMINFO = "/tuner{tunerNumber:d}/streaminfo"
+    STATUS = "/tuner{tunerNumber:d}/status" # RO
+    STREAMINFO = "/tuner{tunerNumber:d}/streaminfo" # RO
+    DEBUG = "/tuner{tunerNumber:d}/debug" # RO
+
+    CHANNEL = "/tuner{tunerNumber:d}/channel" # <modulation|"auto">:<frequency|channel>
+    VCHANNEL = "/tuner{tunerNumber:d}/vchannel" # "v"<virtual channel>.<virtual subchannel>
+    CHANNELMAP = "/tuner{tunerNumber:d}/channelmap" # <channel map>, one of us-bcast, us-cable, us-hrc, uc-irc, {au,eu,tw}-{bcast,cable}
+    FILTER = "/tuner{tunerNumber:d}/filter" # <PID filter>
+    PROGRAM = "/tuner{tunerNumber:d}/program"# <MPEG program number>
+
+    TARGET = "/tuner{tunerNumber:d}/target" # <proto://ip:port>
+    LOCKKEY = "/tuner{tunerNumber:d}/lockkey" # write "force" to remove another client's lock
+
     PLPINFO = "/tuner{tunerNumber:d}/plpinfo"
+
+    VSTATUS = "/tuner{tunerNumber:d}/vstatus" # error unknown getset variable on HDTC-2US
     PLOTSAMPLE = "/tuner{tunerNumber:d}/plotsample" # error unknown getset variable on HDTC-2US
-    DEBUG = "/tuner{tunerNumber:d}/debug"
-    LOCKKEY = "/tuner{tunerNumber:d}/lockkey"
+
+class HttpEndpoints(Enum):
+    LINEUP_JSON = "/lineup.json" # params tuning&show={all,found}
+    LINEUP_XML = "/lineup.xml" # params tuning&show={all,found}
+    LINEUP_POST = "/lineup.post" # POST params scan={start,abort}
+    LINEUP_STATUS = "/lineup_status.json"
+    STATUS = "/status.json"
+    DISCOVER = "/discover.json"
