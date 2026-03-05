@@ -17,10 +17,9 @@ DISCOVER_IPV6_SITELOCAL_MULTICAST = "ff05::176"
 IPV4_BROADCAST = "255.255.255.255"
 IPV6_LINKLOCAL_MULTICAST_ALL_HOSTS = "ff02::1"
 
-BIND_ADDRESS = "0.0.0.0"
+BIND_ADDRESS = "::"
 BIND_PORT = 65001
 
-DEFAULT_TARGET_ADDRESS = ""
 TARGET_PORT = 65001
 
 BUFFER_SIZE = 1460
@@ -82,6 +81,17 @@ class UdpProtocol(asyncio.DatagramProtocol):
         self.transport = transport
 
     def close(self):
+        '''
+        Terminate the UDP listener
+
+        Signal the recv() receive buffer reader method that no new data will arrive by playing a
+        None sigil in the receive buffer. This is in lieu of direclty terminating the Queue with
+        Queue.shutdown(), which is a Python 3.13+ feature.
+
+        Once the recv() method gets the None sigil, it will terminate the async generator, call
+        Queue.task_done() for the final item in the receive buffer, and thus allow the receive
+        buffer's join() method (which controls our join() method) to return.
+        '''
         logging.debug("Stopping UDP listener...")
         self.transport.close()
         # Python 3.13
@@ -89,9 +99,16 @@ class UdpProtocol(asyncio.DatagramProtocol):
         self._receiveBuffer.put_nowait(None) # sigil to shut down queue
 
     async def join(self):
+        '''Wait for the receive buffer Queue to be terminated by close()'''
         return await self._receiveBuffer.join()
 
     async def recv(self, maxcount=0):
+        '''
+        Async generator yielding recieved UDP packets as they arrive
+
+        Will not terminate unless close() is called or maxcount (default 0, no limit) packets have
+        been yielded.
+        '''
         count = 0
         while True:
             if maxcount != 0 and count >= maxcount:
@@ -106,6 +123,7 @@ class UdpProtocol(asyncio.DatagramProtocol):
 
 class DiscoverClient:
     def __init__(self, proto, transport, timeoutSeconds):
+        '''Private __init__ call await DiscoverClient.create() instead'''
         self.proto = proto
         self.transport = transport
         self.timeoutSeconds = timeoutSeconds
@@ -115,6 +133,10 @@ class DiscoverClient:
         )
     @classmethod
     async def create(cls, bind_address=BIND_ADDRESS, bind_port=BIND_PORT, timeoutSeconds=1):
+        '''
+        Factory classmethod to return a DiscoverClient
+        '''
+
         loop = asyncio.get_running_loop()
 
         assert socket.has_dualstack_ipv6()
@@ -126,16 +148,13 @@ class DiscoverClient:
         sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0) # disable V6ONLY flag
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, 64)
-        # TODO: bind address
-        #sock.bind(("::", bind_port))
-        sock.bind(("::", bind_port, 0, 0))
+
+        sock.bind((bind_address, bind_port, 0, 0))
 
         transport, _ = await loop.create_datagram_endpoint(
             lambda: proto,
             sock=sock,
         )
-
-
 
         return cls(
             proto,
@@ -144,8 +163,23 @@ class DiscoverClient:
         )
 
     async def join(self):
+        '''Wait for the UDP listener to terminate'''
         return await self.proto.join()
+
     def send(self, data: bytes, host: str, port: int):
+        '''
+        Send bytes via UDP to the specified host and port
+
+        `host` will be resolved with getaddrinfo(), so DNS lookups will be performed.
+
+        `host` may also be an IPv4 or IPv6 literal. IPv4 literals will be converted to IPv6
+        mapped-IPv4 literals in ::ffff:0000:0000/32 for compatiblity with the dual-stack UDP socket.
+
+        Note that since we are broadcasting to discover HDHomeRun devices, packets will be sent to
+        ALL ADDRESSES RETURNED BY GETADDRINFO. That is, if there are multiple A and/or AAAA records
+        for the hostname provided, ALL of the IPv4 and IPv6 addresses returned will get discovery
+        packets.
+        '''
         # dual stack DNS lookup
         addrInfo = socket.getaddrinfo(host, port, type=socket.SOCK_DGRAM, family=socket.AF_UNSPEC)
 
@@ -155,14 +189,18 @@ class DiscoverClient:
                 v4, port = sockaddr
                 # create mapped ipv4 address for sending on dualstack socket
                 sockaddr = (f"::ffff:{v4}", port, 0, 0)
-            #sockaddr = (sockaddr[0], sockaddr[1], sockaddr[2], 4)
-            #sockaddr = (sockaddr[0], sockaddr[1], sockaddr[2], 2)
 
             logging.info(f"Sending packet to {sockaddr}")
             self.transport.sendto(data, sockaddr)
 
-    async def recv(self):
-        async for data, addr in self.proto.recv():
+    async def recv(self, maxcount=0):
+        '''
+        Async generator yielding received UDP packets as they arrive
+
+        Will not terminate unless the close() method is called from another task (e.g. from
+        a loop.call_later()) or maxcount (default 0, no limit) packets have been yielded.
+        '''
+        async for data, addr in self.proto.recv(maxcount=maxcount):
             yield data, addr
 
     def sendDiscover(self, host=None, port=TARGET_PORT):
@@ -211,7 +249,7 @@ class DiscoverClient:
             self.send(packetBytes, host, port)
 
 async def main(host, port):
-    client = await DiscoverClient.create(timeoutSeconds=0.5)
+    client = await DiscoverClient.create(timeoutSeconds=1)
 
     # Send standard DISCOVER packet
     # Seem sendDiscover() method implementation for how to use DiscoverClient.send() directly
@@ -246,15 +284,18 @@ async def main(host, port):
 
             logging.info(pprint.pformat(processResponse(packet)))
         else:
-            print("No data from {addr}")
+            logging.info("No data from {addr}")
     await client.join()
+
+    # TODO: process raw packets into dicts of fields
     logging.info(f"{len(replies)} discover replies received.")
+
     return 0
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
 
-    host = os.environ.get('HOST', DEFAULT_TARGET_ADDRESS)
+    host = os.environ.get('HOST')
     port = int(os.environ.get('PORT', TARGET_PORT))
 
     asyncio.run(main(host, port))
