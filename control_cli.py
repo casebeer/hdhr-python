@@ -34,8 +34,7 @@ def cliClient(args) -> int:
 
     data = {}
 
-    print(args.endpoint)
-    print(args.value)
+    logger.debug(f"{'get' if args.value is None else 'set'} {args.endpoint} {args.value if args.value is not None else ''}")
     if args.endpoint is None:
         # no endpoint set, dumpe all variables
         data.update(getAllFields(client))
