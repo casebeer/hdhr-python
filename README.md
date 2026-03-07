@@ -21,7 +21,7 @@ Send discover packets to broadcast/multicast addresses on LAN
 
     $ hdhr
 
-"get" all known endpoints and print them out
+"get" all known endpoints, including discover protocol fields, and print them out
 
     $ hdhr --host 192.0.1.123
 
@@ -32,6 +32,25 @@ Print the value of `/sys/hwmodel`
 Set the value of `/tuner0/channel`
 
     $ hdhr --host 192.0.1.123 /tuner0/channel auto:33
+
+Print just the discover data for a single device:
+
+    $ hdhr --host 192.0.1.123 --discover
+
+Send a discover request to a link-local IPv6 multicast group from interface `en1` and print the
+replies (untested with actual HDHR devices):
+
+    $ hdhr --host ff02::176%en1 --discover
+
+### Help
+
+Print `hdhr` CLI usage help:
+
+    $ hdhr -h
+
+Print on-device help sent by HDHomeRun tuner showing available control protocol endpoints:
+
+    $ hdhr --host 192.0.1.123 help
 
 ### Channel scans
 
