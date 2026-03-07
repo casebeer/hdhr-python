@@ -1,6 +1,7 @@
 # hdhr-python HDHomeRun API Client
 
-Native cross-platform Python asyncio HDHomeRun TCP and UDP API client.
+Native Python cross-platform asyncio HDHomeRun TCP and UDP API client. Has no dependencies and does
+not make use of the C `libhdhomerun` or `hdhomerun_config` CLI binary.
 
 ## Features
 
@@ -14,6 +15,24 @@ Native cross-platform Python asyncio HDHomeRun TCP and UDP API client.
   - Allows upload of client-managed legacy device channel scans to support modern HDHomeRun clients
 - Python client classes
 - CLI client
+
+## Installation
+
+    git clone https://github.com/casebeer/hdhr-python
+    cd hdhr-python
+    pip install -e .
+
+You'll now have an `hdhr` CLI script on your `PATH`.
+
+Alternatively, install in a venv:
+
+    cd hdhr-python
+    python3 -m venv venv
+    venv/bin/pip install -e .
+
+And link to the `hdhr` script in the venv from somewhere on your `PATH`:
+
+    ln -s "$(pwd)/venv/bin/hdhr" ~/bin/
 
 ## Usage
 
