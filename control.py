@@ -36,16 +36,47 @@ class ControlClient:
     def __init__(self, host, port=65001):
         self.host = host
         self.port = port
+        self.addrInfo: list = []
 
     def request(self, packet: hdhr.Packet) -> hdhr.Packet:
         packetBytes = packet.unparse()
         logger.debug(f"-> {packetBytes.hex()}")
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.connect((self.host, self.port))
-            sock.sendall(packetBytes)
-            responseBytes = sock.recv(MAX_PACKET_LENGTH)
-            logger.debug(f"<- {responseBytes.hex()}")
-            return hdhr.Packet.parse(responseBytes)
+
+        if len(self.addrInfo) == 0:
+            # cached dual stack DNS lookup
+            self.addrInfo = socket.getaddrinfo(self.host, self.port, type=socket.SOCK_STREAM, family=socket.AF_UNSPEC)
+
+        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
+            # send to first successful addrInfo entry
+            #for family, type, proto, canonname, sockaddr in self.addrInfo:
+            while len(self.addrInfo) > 0:
+                family, type, proto, canonname, sockaddr = self.addrInfo[0]
+                if family == socket.AF_INET:
+                    v4, port = sockaddr
+                    # create mapped ipv4 address for sending on dualstack socket
+                    sockaddr = (f"::ffff:{v4}", port, 0, 0)
+                try:
+                    logger.debug(f"Sending packet to {sockaddr}")
+                    sock.connect(sockaddr)
+                except socket.error as e:
+                    # try next
+                    logger.debug(f"{e} while connecting to {sockaddr}, trying next IP...")
+                    # discard the unusable addrInfo entry
+                    # n.b. getaddrinfo will be a short list – O(n) copy for this popleft
+                    self.addrInfo.pop(0)
+                    continue
+
+                try:
+                    sock.sendall(packetBytes)
+
+                    responseBytes = sock.recv(MAX_PACKET_LENGTH)
+                    logger.debug(f"<- {responseBytes.hex()}")
+                    return hdhr.Packet.parse(responseBytes)
+                except socket.error as e:
+                    logger.error(f"{e} while sending data to {sockaddr}")
+                    # clear addrInfo after error
+                    self.addrInfo = []
+
 
     def set(self, requestFieldName: str, value: str):
 
