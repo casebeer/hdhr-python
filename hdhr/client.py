@@ -2,9 +2,12 @@
 import hdhr
 from control import ControlClient
 from discover import DiscoverClient
+import fields
 
 import logging
 logger = logging.getLogger(__name__)
+
+DEFAULT_TUNER_COUNT = 2
 
 class HdhrClient:
     def __init__(self, host, controlClient, discoverClient):
@@ -27,6 +30,25 @@ class HdhrClient:
     def set(self, endpoint, value):
         '''Control protocol get request'''
         return self.controlClient.set(endpoint, value)
+
+    async def getAllFields(client):
+        data = {}
+        tunerCount = DEFAULT_TUNER_COUNT
+
+        for field in fields.ControlFields:
+            data.update(client.get(field.value))
+
+        discover = await client.discoverOne()
+
+        if discover:
+            tunerCount = discover.get('TUNER_COUNT', DEFAULT_TUNER_COUNT)
+            data.update(discover)
+
+        # n.b. need to get number of tuners via Discovery API or HTTP API /discover.json
+        for tunerNumber in range(tunerCount):
+            for field in fields.TunerFields:
+                data.update(client.get(field.value.format(tunerNumber=tunerNumber)))
+        return data
 
     async def discover(self, maxcount=0):
         '''Discover protocol request for all matching devices'''
