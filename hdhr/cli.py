@@ -118,7 +118,7 @@ async def main() -> int:
         action="store_true",
         help="Perform a discovery API request to --host."
              "Host can be a broadcast or multicast address, including a scoped IPv6 "
-             "link-local address, e.g. fe80::1234%eno1.",
+             "link-local address, e.g. fe80::1234%%eno1.",
     )
 
     parser.add_argument(
