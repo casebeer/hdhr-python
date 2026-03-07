@@ -42,6 +42,15 @@ class ControlClient:
         packetBytes = packet.unparse()
         logger.debug(f"-> {packetBytes.hex()}")
 
+        responseBytes = self.requestBytes(packetBytes)
+
+        if responseBytes is None:
+            logger.error("Unable to complete Control API request.")
+            return hdhr.Packet.invalid()
+
+        return hdhr.Packet.parse(responseBytes)
+
+    def requestBytes(self, packetBytes: bytes) -> bytes:
         if len(self.addrInfo) == 0:
             # cached dual stack DNS lookup
             self.addrInfo = socket.getaddrinfo(self.host, self.port, type=socket.SOCK_STREAM, family=socket.AF_UNSPEC)
@@ -71,11 +80,16 @@ class ControlClient:
 
                     responseBytes = sock.recv(MAX_PACKET_LENGTH)
                     logger.debug(f"<- {responseBytes.hex()}")
-                    return hdhr.Packet.parse(responseBytes)
+
+                    return responseBytes
                 except socket.error as e:
                     logger.error(f"{e} while sending data to {sockaddr}")
                     # clear addrInfo after error
                     self.addrInfo = []
+                    return
+            else:
+                # we've run out of addresses to try, we're unable to connect
+                logger.error(f"Unable to connect to {self.host} on TCP port {self.port}.")
 
 
     def set(self, requestFieldName: str, value: str):

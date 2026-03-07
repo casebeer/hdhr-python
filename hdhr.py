@@ -21,6 +21,8 @@ class PacketType(Enum):
     UPGRADE_REQ = 0x0006
     UPGRADE_RPY = 0x0007
 
+    INVALID = 0x0000
+
 class PayloadTag(Enum):
     DEVICE_TYPE = 0x01
     DEVICE_ID = 0x02
@@ -166,6 +168,14 @@ class Packet:
             payloadLength=payloadLength,
             payload=Payload.parse(payloadBytes),
             crc=crc,
+        )
+
+    @classmethod
+    def invalid(cls):
+        '''Return an invalid Packet'''
+        return cls(
+            packetType=PacketType.INVALID,
+            payload=Payload.parse(b''),
         )
 
     def unparse(self):
