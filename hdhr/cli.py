@@ -166,5 +166,8 @@ async def main() -> int:
 
     return await cliClient(args)
 
-if __name__ == '__main__':
+def run():
     sys.exit(asyncio.run(main()))
+
+if __name__ == '__main__':
+    run()
