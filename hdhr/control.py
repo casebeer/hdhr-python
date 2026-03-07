@@ -56,6 +56,7 @@ class ControlClient:
             self.addrInfo = socket.getaddrinfo(self.host, self.port, type=socket.SOCK_STREAM, family=socket.AF_UNSPEC)
 
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
+            sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0) # disable V6ONLY flag
             # send to first successful addrInfo entry
             #for family, type, proto, canonname, sockaddr in self.addrInfo:
             while len(self.addrInfo) > 0:

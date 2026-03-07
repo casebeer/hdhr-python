@@ -147,9 +147,10 @@ class DiscoverClient:
         # manually configure dual stack socket
         sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0) # disable V6ONLY flag
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1) # allow v4 broadcast
         sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, 64)
 
+        # listen for incoming UDP packets
         sock.bind((bind_address, bind_port, 0, 0))
 
         transport, _ = await loop.create_datagram_endpoint(
