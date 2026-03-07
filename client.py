@@ -1,33 +1,43 @@
 
-import socket
 import hdhr
+from control import ControlClient
+from discover import DiscoverClient
 
-import os
+class HdhrClient:
+    def __init__(self, host, controlClient, discoverClient):
+        self.host = host
+        self.controlClient = controlClient
+        self.discoverClient = discoverClient
 
-HOST = os.environ.get('HOST')
-PORT = int(os.environ.get('PORT', 65001))
+    @classmethod
+    async def create(cls, host):
+        return cls(
+            host=host,
+            controlClient=ControlClient(host),
+            discoverClient=await DiscoverClient.create(),
+        )
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-    sock.connect((HOST, PORT))
+    def get(self, endpoint):
+        '''Control protocol get request'''
+        return self.controlClient.get(endpoint)
 
-    payload = hdhr.Payload(
-        fields=[hdhr.PayloadField(
-            tag=hdhr.PayloadTag.GETSET_NAME,
-            value=bytearray("/sys/version\0", encoding="ascii"),
-        )]
-    )
+    def set(self, endpoint, value):
+        '''Control protocol get request'''
+        return self.controlClient.set(endpoint, value)
 
-    packet = hdhr.Packet(
-        packetType=hdhr.PacketType.GETSET_REQ,
-        payload=payload,
-    )
-    print("Sending")
-    print(packet)
+    async def discover(self, maxcount=0):
+        '''Discover protocol request for all matching devices'''
+        self.discoverClient.sendDiscover(self.host)
+        async for reply in self.discoverClient.discoverReplies(maxcount=maxcount):
+            yield reply
 
-    sock.sendall(packet.unparse())
-    data = sock.recv(2048)
-    print("Received")
-    print(data.hex())
+    async def discoverOne(self):
+        '''
+        Get discover data via UDP discover protocol for only a single device
 
-    response = hdhr.Packet.parse(data)
-    print(response)
+        Most useful if self.host is the IP address of a specific device, and we just want to
+        retrieve the device ID and auth token.
+        '''
+        async for reply in self.discover(maxcount=1):
+            # break out of loop after first reply
+            return reply
