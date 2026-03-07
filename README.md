@@ -48,6 +48,10 @@ Return a single JSON object with all fields found on device:
 
     $ hdhr --host 192.0.2.123 --json
 
+Specify device to connect to by device ID rather than hostname:
+
+    $ hdhr --device 1234abcd 192.0.2.123
+
 Print the value of `/sys/hwmodel`
 
     $ hdhr --host 192.0.2.123 /sys/hwmodel
@@ -80,6 +84,25 @@ Print `hdhr` CLI usage help:
 Print on-device help sent by HDHomeRun tuner showing available control protocol endpoints:
 
     $ hdhr --host 192.0.2.123 help
+
+Print just the discover data for a single device:
+
+    $ hdhr --host 192.0.1.123 --discover
+
+Send a discover request to a link-local IPv6 multicast group from interface `en1` and print the
+replies (untested with actual HDHR devices):
+
+    $ hdhr --host ff02::176%en1 --discover
+
+### Help
+
+Print `hdhr` CLI usage help:
+
+    $ hdhr -h
+
+Print on-device help sent by HDHomeRun tuner showing available control protocol endpoints:
+
+    $ hdhr --host 192.0.1.123 help
 
 ### Channel scans
 
