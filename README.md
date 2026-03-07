@@ -9,7 +9,8 @@ Native cross-platform Python asyncio HDHomeRun TCP and UDP API client.
   - Client-managed legacy device channel scan using the GETSET API
 - UDP "Discover" API
   - Dual stack unicast, multicast, and IPv4 broadcast support
-- Undocumented https://api.hdhomerun.com/device/sync?LegacyChannelScan=1&DeviceAuth= API
+- Undocumented legacy tuner channel scan upload API
+  - POST JSON to https://api.hdhomerun.com/device/sync?LegacyChannelScan=1&DeviceAuth=
   - Allows upload of client-managed legacy device channel scans to support modern HDHomeRun clients
 - Python client classes
 - CLI client
