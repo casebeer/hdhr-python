@@ -107,7 +107,7 @@ You can now send that video to a receiver on the network:
 
     $ hdhr --host 192.0.1.123 /tuner0/target udp://192.0.1.254:8000
 
-# Locking and unlocking the tuner's "lockkey"
+### Locking and unlocking the tuner's "lockkey"
 
 Setting a tuner's "lockkey" prevents other devices on the network from taking over the tuner until
 you delete the lockkey.
