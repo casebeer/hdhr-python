@@ -53,6 +53,34 @@ Output of `get help` on HDTC-2US:
     /tuner<n>/target <ip>:<port>
     /tuner<n>/vchannel <vchannel>
 
+From https://www.silicondust.com/hdhomerun/hdhomerun_tech.pdf
+
+/card/status Get status of CableCARD (6CC only)
+/oob/channel <modulation>:<freq> Get/set out of band channel (6CC only)
+/oob/debug Get out of band channel debug info (6CC only)
+/oob/status Get out of band channel status info (6CC only)
+/sys/boot <config> Get/set boot configuration
+/sys/copyright Get copyright information
+/sys/debug Get/set system debug information
+/sys/features Get system feature information
+/sys/hwmodel Get system hardware model string
+/sys/ipaddr dhcp|"<ip> <mask> <gw> <dns>" Get/set system IP address
+/sys/model Get/set model string
+/sys/restart <resource> Restart device/component
+/sys/version Get firmware version
+/tuner<n>/channel <modulation>:<freq|ch> Get/set channel
+/tuner<n>/channelmap <channelmap> Get/set channelmap
+/tuner<n>/debug Get tuner debug information
+/tuner<n>/filter "0x<nnnn>-0x<nnnn> […]" Get/set tuner PID filter
+/tuner<n>/lockkey Get/set tuner locking
+/tuner<n>/plotsample Get raw plotsample data from tuner
+/tuner<n>/program <program number> Get/set MPEG program
+/tuner<n>/streaminfo Get list of programs on current channel
+/tuner<n>/status Get tuner status
+/tuner<n>/target <ip>:<port> Get/set stream target
+/tuner<n>/vchannel <vchannel> Get/set virtual channel number (6CC only)
+/tuner<n>/vstatus Get/set subscription/protection status (6CC only)
+
 '''
 
 class ControlFields(Enum):
@@ -74,8 +102,13 @@ class ControlFields(Enum):
     LINEUP_LOCATION = "/lineup/location" # error unknown getset variable on HDTC-2US
     SYS_BOOT = "/sys/boot" # error unknown getset variable on HDTC-2US
     SYS_DVBC_MODULATION = "/sys/dvbc_modulation" # error unknown getset variable on HDTC-2US
-    OOB_STATUS = "/oob/status" # error unknown getset variable on HDTC-2US
-    OOB_PLOTSAMPLE = "/oob/plotsample" # error unknown getset variable on HDTC-2US
+
+    CARD_STATUS = "/card/status" # Get status of CableCARD (6CC only)
+    OOB_STATUS = "/oob/status" # Get out of band channel debug info (6CC only)
+    OOB_PLOTSAMPLE = "/oob/plotsample" # Get out of band channel status info (6CC only)
+    OOB_CHANNEL = "/oob/channel" # <modulation>:<freq> Get/set out of band channel (6CC only)
+    OOB_DEBUG = "/oob/debug" # Get out of band channel debug info (6CC only)
+    SYS_IPADDR = "/sys/ipaddr" # dhcp|"<ip> <mask> <gw> <dns>" Get/set system IP address
 
 class TunerFields(Enum):
     '''
@@ -91,16 +124,15 @@ class TunerFields(Enum):
     CHANNEL = "/tuner{tunerNumber:d}/channel" # <modulation|"auto">:<frequency|channel>
     VCHANNEL = "/tuner{tunerNumber:d}/vchannel" # "v"<virtual channel>.<virtual subchannel>
     CHANNELMAP = "/tuner{tunerNumber:d}/channelmap" # <channel map>, one of us-bcast, us-cable, us-hrc, uc-irc, {au,eu,tw}-{bcast,cable}
-    FILTER = "/tuner{tunerNumber:d}/filter" # <PID filter>
+    FILTER = "/tuner{tunerNumber:d}/filter" # "0x<nnnn>-0x<nnnn> […]" Get/set tuner PID filter
     PROGRAM = "/tuner{tunerNumber:d}/program"# <MPEG program number>
 
     TARGET = "/tuner{tunerNumber:d}/target" # <proto://ip:port>
     LOCKKEY = "/tuner{tunerNumber:d}/lockkey" # write "force" to remove another client's lock
 
     PLPINFO = "/tuner{tunerNumber:d}/plpinfo"
-
-    VSTATUS = "/tuner{tunerNumber:d}/vstatus" # error unknown getset variable on HDTC-2US
-    PLOTSAMPLE = "/tuner{tunerNumber:d}/plotsample" # error unknown getset variable on HDTC-2US
+    VSTATUS = "/tuner{tunerNumber:d}/vstatus" # Get/set subscription/protection status (6CC only)
+    PLOTSAMPLE = "/tuner{tunerNumber:d}/plotsample" # Get raw plotsample data from tuner
 
 class HttpEndpoints(Enum):
     LINEUP_JSON = "/lineup.json" # params tuning&show={all,found}
