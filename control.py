@@ -37,12 +37,15 @@ class ControlClient:
         self.host = host
         self.port = port
 
-    def request(self, packet):
+    def request(self, packet: hdhr.Packet) -> hdhr.Packet:
+        packetBytes = packet.unparse()
+        logger.debug(f"-> {packetBytes.hex()}")
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.connect((self.host, self.port))
-            sock.sendall(packet.unparse())
-            data = sock.recv(MAX_PACKET_LENGTH)
-            return hdhr.Packet.parse(data)
+            sock.sendall(packetBytes)
+            responseBytes = sock.recv(MAX_PACKET_LENGTH)
+            logger.debug(f"<- {responseBytes.hex()}")
+            return hdhr.Packet.parse(responseBytes)
 
     def set(self, requestFieldName: str, value: str):
 
@@ -65,7 +68,7 @@ class ControlClient:
             payload=payload,
         )
 
-        response = self.request(packet)
+        response: hdhr.Packet = self.request(packet)
         return self.processResponse(response, requestFieldName)
 
     def get(self, requestFieldName: str):
@@ -87,10 +90,10 @@ class ControlClient:
 
         return self.processResponse(response, requestFieldName)
 
-    def processResponse(self, response, requestFieldName):
+    def processResponse(self, response: hdhr.Packet, requestFieldName):
         name = None
         value = None
-        #print(response)
+        logger.debug(response)
         responseFields = {}
         for field in response.payload.fields:
             if field.tag == hdhr.PayloadTag.GETSET_NAME:
