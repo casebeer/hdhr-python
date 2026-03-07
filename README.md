@@ -9,7 +9,8 @@ Native cross-platform Python asyncio HDHomeRun TCP and UDP API client.
   - Client-managed legacy device channel scan using the GETSET API
 - UDP "Discover" API
   - Dual stack unicast, multicast, and IPv4 broadcast support
-- Undocumented https://api.hdhomerun.com/device/sync?LegacyChannelScan=1&DeviceAuth= API
+- Undocumented legacy tuner channel scan upload API
+  - POST JSON to https://api.hdhomerun.com/device/sync?LegacyChannelScan=1&DeviceAuth=
   - Allows upload of client-managed legacy device channel scans to support modern HDHomeRun clients
 - Python client classes
 - CLI client
@@ -20,7 +21,7 @@ Send discover packets to broadcast/multicast addresses on LAN
 
     $ hdhr
 
-"get" all known endpoints and print them out
+"get" all known endpoints, including discover protocol fields, and print them out
 
     $ hdhr --host 192.0.1.123
 
@@ -31,6 +32,25 @@ Print the value of `/sys/hwmodel`
 Set the value of `/tuner0/channel`
 
     $ hdhr --host 192.0.1.123 /tuner0/channel auto:33
+
+Print just the discover data for a single device:
+
+    $ hdhr --host 192.0.1.123 --discover
+
+Send a discover request to a link-local IPv6 multicast group from interface `en1` and print the
+replies (untested with actual HDHR devices):
+
+    $ hdhr --host ff02::176%en1 --discover
+
+### Help
+
+Print `hdhr` CLI usage help:
+
+    $ hdhr -h
+
+Print on-device help sent by HDHomeRun tuner showing available control protocol endpoints:
+
+    $ hdhr --host 192.0.1.123 help
 
 ### Channel scans
 
@@ -87,7 +107,7 @@ You can now send that video to a receiver on the network:
 
     $ hdhr --host 192.0.1.123 /tuner0/target udp://192.0.1.254:8000
 
-# Locking and unlocking the tuner's "lockkey"
+### Locking and unlocking the tuner's "lockkey"
 
 Setting a tuner's "lockkey" prevents other devices on the network from taking over the tuner until
 you delete the lockkey.
