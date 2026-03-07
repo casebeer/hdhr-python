@@ -14,6 +14,7 @@ import fields
 logger = logging.getLogger(__name__)
 
 DEFAULT_PORT = 65001
+DEFAULT_TUNER_COUNT = 2
 
 LOG_VERBOSITY = {
     0: logging.WARN,
@@ -56,8 +57,7 @@ async def cliClient(args) -> int:
 
     elif args.endpoint is None:
         # no endpoint set, dumpe all variables
-        data.update(getAllFields(client))
-        data.update(await client.discoverOne())
+        data.update(await getAllFields(client))
     elif args.value is not None:
         # set
         data.update(client.set(args.endpoint, args.value))
@@ -71,13 +71,21 @@ async def cliClient(args) -> int:
     #pprint.pprint(client.set(fields.ControlFields.SYS_RESTART, "self"))
     #return 0
 
-def getAllFields(client):
+async def getAllFields(client):
     data = {}
+    tunerCount = DEFAULT_TUNER_COUNT
+
     for field in fields.ControlFields:
         data.update(client.get(field.value))
 
+    discover = await client.discoverOne()
+
+    if discover:
+        tunerCount = discover.get('TUNER_COUNT', DEFAULT_TUNER_COUNT)
+        data.update(discover)
+
     # n.b. need to get number of tuners via Discovery API or HTTP API /discover.json
-    for tunerNumber in (0, 1):
+    for tunerNumber in range(tunerCount):
         for field in fields.TunerFields:
             data.update(client.get(field.value.format(tunerNumber=tunerNumber)))
     return data
