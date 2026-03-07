@@ -151,11 +151,11 @@ class ControlClient:
                 name, value = None, None
             elif field.tag == hdhr.PayloadTag.ERROR_MESSAGE:
                 value = field.value[:-1].decode(self.encoding)
-                logger.error(f"ERROR: {value} {requestFieldName}")
+                logger.warn(f"ERROR: {value} {requestFieldName}")
                 responseFields[name]: value
                 value = None
             else:
-                logger.error(f"UNHANDLED RESPONSE TAG: {field.tag.name}")
+                logger.warn(f"UNHANDLED RESPONSE TAG: {field.tag.name}")
         return responseFields
 
 if __name__ == '__main__':
