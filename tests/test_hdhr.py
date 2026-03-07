@@ -1,7 +1,7 @@
 
 import logging
 import unittest
-import hdhr
+from hdhr import hdhr
 
 logger = logging.getLogger(__name__)
 
