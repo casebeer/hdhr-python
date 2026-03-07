@@ -23,20 +23,20 @@ class HdhrClient:
             discoverClient=await DiscoverClient.create(bind_port=discoverPort),
         )
 
-    def get(self, endpoint):
+    async def get(self, endpoint):
         '''Control protocol get request'''
-        return self.controlClient.get(endpoint)
+        return await self.controlClient.get(endpoint)
 
-    def set(self, endpoint, value):
+    async def set(self, endpoint, value):
         '''Control protocol get request'''
-        return self.controlClient.set(endpoint, value)
+        return await self.controlClient.set(endpoint, value)
 
     async def getAllFields(client):
         data = {}
         tunerCount = DEFAULT_TUNER_COUNT
 
         for field in fields.ControlFields:
-            data.update(client.get(field.value))
+            data.update(await client.get(field.value))
 
         discover = await client.discoverOne()
 
@@ -47,7 +47,7 @@ class HdhrClient:
         # n.b. need to get number of tuners via Discovery API or HTTP API /discover.json
         for tunerNumber in range(tunerCount):
             for field in fields.TunerFields:
-                data.update(client.get(field.value.format(tunerNumber=tunerNumber)))
+                data.update(await client.get(field.value.format(tunerNumber=tunerNumber)))
         return data
 
     async def discover(self, maxcount=0):

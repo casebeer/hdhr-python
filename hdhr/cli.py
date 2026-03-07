@@ -58,10 +58,10 @@ async def cliClient(args) -> int:
         data.update(await client.getAllFields())
     elif args.value is not None:
         # set
-        data.update(client.set(args.endpoint, args.value))
+        data.update(await client.set(args.endpoint, args.value))
     else:
         # get
-        data.update(client.get(args.endpoint))
+        data.update(await client.get(args.endpoint))
 
     pprint.pprint(dict(data))
 

@@ -293,7 +293,7 @@ class ScanManager:
 
     async def streaminfoOnce(self):
         '''Attempt to get streaminfo once. No validation on output data'''
-        streaminfo = self.client.get(f"{self.tuner}/streaminfo")
+        streaminfo = await self.client.get(f"{self.tuner}/streaminfo")
         tsid = None
         programs = []
         for line in streaminfo.get(f"{self.tuner}/streaminfo").split("\n"):
@@ -317,7 +317,7 @@ class ScanManager:
     async def tune(self, rfChannel):
         logger.info(f"SCANNING: _ ({self.channelmap}:{rfChannel})")
         # TODO: Use high level client
-        result = self.client.set(f"{self.tuner}/channel", str(rfChannel))
+        result = await self.client.set(f"{self.tuner}/channel", str(rfChannel))
         await asyncio.sleep(self.tuningWaitSeconds)
         return result
 
@@ -355,7 +355,7 @@ class ScanManager:
     async def checkTuningOnce(self):
         '''Query the device's TCP API to get current tuner status'''
         #self.client.get(fields.TunerFields.DEBUG.value.format(self.tunerNumber))
-        responseData = self.client.get(f"{self.tuner}/debug") # already processed
+        responseData = await self.client.get(f"{self.tuner}/debug") # already processed
         debugString = responseData[f"{self.tuner}/debug"]
         debug = parseTunerDebugString(debugString)
 

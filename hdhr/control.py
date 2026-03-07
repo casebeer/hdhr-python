@@ -1,4 +1,5 @@
 
+import asyncio
 import socket
 import pprint
 import os
@@ -38,11 +39,11 @@ class ControlClient:
         self.port = port
         self.addrInfo: list = []
 
-    def request(self, packet: hdhr.Packet) -> hdhr.Packet:
+    async def request(self, packet: hdhr.Packet) -> hdhr.Packet:
         packetBytes = packet.unparse()
         logger.debug(f"-> {packetBytes.hex()}")
 
-        responseBytes = self.requestBytes(packetBytes)
+        responseBytes = await self.requestBytes(packetBytes)
 
         if responseBytes is None:
             logger.error("Unable to complete Control API request.")
@@ -50,50 +51,61 @@ class ControlClient:
 
         return hdhr.Packet.parse(responseBytes)
 
-    def requestBytes(self, packetBytes: bytes) -> bytes:
+    async def requestBytes(self, packetBytes: bytes) -> bytes:
         if len(self.addrInfo) == 0:
             # cached dual stack DNS lookup
             self.addrInfo = socket.getaddrinfo(self.host, self.port, type=socket.SOCK_STREAM, family=socket.AF_UNSPEC)
 
-        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
-            sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0) # disable V6ONLY flag
-            # send to first successful addrInfo entry
-            #for family, type, proto, canonname, sockaddr in self.addrInfo:
-            while len(self.addrInfo) > 0:
-                family, type, proto, canonname, sockaddr = self.addrInfo[0]
-                if family == socket.AF_INET:
-                    v4, port = sockaddr
-                    # create mapped ipv4 address for sending on dualstack socket
-                    sockaddr = (f"::ffff:{v4}", port, 0, 0)
-                try:
-                    logger.debug(f"Sending packet to {sockaddr}")
-                    sock.connect(sockaddr)
-                except socket.error as e:
-                    # try next
-                    logger.debug(f"{e} while connecting to {sockaddr}, trying next IP...")
-                    # discard the unusable addrInfo entry
-                    # n.b. getaddrinfo will be a short list – O(n) copy for this popleft
-                    self.addrInfo.pop(0)
-                    continue
+        sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        sock.setblocking(False)
+        sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0) # disable V6ONLY flag
 
-                try:
-                    sock.sendall(packetBytes)
+        # send to first successful addrInfo entry
+        while len(self.addrInfo) > 0:
+            family, type, proto, canonname, sockaddr = self.addrInfo[0]
+            if family == socket.AF_INET:
+                v4, port = sockaddr
+                # create mapped ipv4 address for sending on dualstack socket
+                sockaddr = (f"::ffff:{v4}", port, 0, 0)
+            try:
+                logger.debug(f"Sending packet to {sockaddr}")
+                await asyncio.get_event_loop().sock_connect(sock, sockaddr)
+            except socket.error as e:
+                # try next
+                logger.debug(f"{e} while connecting to {sockaddr}, trying next IP...")
+                # discard the unusable addrInfo entry
+                # n.b. getaddrinfo will be a short list – O(n) copy for this popleft
+                self.addrInfo.pop(0)
+                continue
 
-                    responseBytes = sock.recv(MAX_PACKET_LENGTH)
-                    logger.debug(f"<- {responseBytes.hex()}")
+            writer = None
+            try:
+                reader, writer = await asyncio.open_connection(sock=sock)
 
-                    return responseBytes
-                except socket.error as e:
-                    logger.error(f"{e} while sending data to {sockaddr}")
-                    # clear addrInfo after error
-                    self.addrInfo = []
-                    return
-            else:
-                # we've run out of addresses to try, we're unable to connect
-                logger.error(f"Unable to connect to {self.host} on TCP port {self.port}.")
+                #sock.sendall(packetBytes)
+                writer.write(packetBytes)
+                await writer.drain()
+
+                #responseBytes = sock.recv(MAX_PACKET_LENGTH)
+                responseBytes = await reader.read(MAX_PACKET_LENGTH)
+                logger.debug(f"<- {responseBytes.hex()}")
+
+                return responseBytes
+            except socket.error as e:
+                logger.error(f"{e} while sending data to {sockaddr}")
+                # clear addrInfo after error
+                self.addrInfo = []
+                return
+            finally:
+                if writer is not None:
+                    writer.close()
+                    await writer.wait_closed()
+        else:
+            # we've run out of addresses to try, we're unable to connect
+            logger.error(f"Unable to connect to {self.host} on TCP port {self.port}.")
 
 
-    def set(self, requestFieldName: str, value: str):
+    async def set(self, requestFieldName: str, value: str):
 
         # Construct a "set" payload with both a parameter name and a parameter value specified
         payload = hdhr.Payload(
@@ -114,10 +126,10 @@ class ControlClient:
             payload=payload,
         )
 
-        response: hdhr.Packet = self.request(packet)
+        response: hdhr.Packet = await self.request(packet)
         return self.processResponse(response, requestFieldName)
 
-    def get(self, requestFieldName: str):
+    async def get(self, requestFieldName: str):
 
         # Construct a "get" payload with only a parameter name specified
         payload = hdhr.Payload(
@@ -132,7 +144,7 @@ class ControlClient:
             payload=payload,
         )
 
-        response = self.request(packet)
+        response = await self.request(packet)
 
         return self.processResponse(response, requestFieldName)
 
@@ -158,7 +170,7 @@ class ControlClient:
                 logger.warn(f"UNHANDLED RESPONSE TAG: {field.tag.name}")
         return responseFields
 
-if __name__ == '__main__':
+async def main():
     logging.basicConfig(level=logging.INFO)
     host = os.environ.get('HOST')
     port = int(os.environ.get('PORT', 65001))
@@ -167,13 +179,16 @@ if __name__ == '__main__':
 
     data = {}
     for field in fields.ControlFields:
-        data.update(client.get(field.value))
+        data.update(await client.get(field.value))
 
     # n.b. need to get number of tuners via Discovery API or HTTP API /discover.json
     for tunerNumber in (0, 1):
         for field in fields.TunerFields:
-            data.update(client.get(field.value.format(tunerNumber=tunerNumber)))
+            data.update(await client.get(field.value.format(tunerNumber=tunerNumber)))
     pprint.pprint(data)
 
     # restart device
     #pprint.pprint(client.set(fields.ControlFields.SYS_RESTART, "self"))
+
+if __name__ == '__main__':
+    asyncio.run(main())
