@@ -151,3 +151,10 @@ For usage examples, see the `main()` methods in
 ## Non-goals
 
 - Firmware upload API
+
+## References
+
+- https://github.com/Silicondust/libhdhomerun
+- https://www.silicondust.com/hdhomerun/hdhomerun_development.pdf
+- https://www.silicondust.com/hdhomerun/hdhomerun_http_development.pdf
+- https://www.silicondust.com/hdhomerun/hdhomerun_tech.pdf
