@@ -92,7 +92,7 @@ class UdpProtocol(asyncio.DatagramProtocol):
         Queue.task_done() for the final item in the receive buffer, and thus allow the receive
         buffer's join() method (which controls our join() method) to return.
         '''
-        logging.debug("Stopping UDP listener...")
+        logger.debug("Stopping UDP listener...")
         self.transport.close()
         # Python 3.13
         #self._receiveBuffer.shutdown() # immediate=False, so get()s can continue
@@ -190,7 +190,7 @@ class DiscoverClient:
                 # create mapped ipv4 address for sending on dualstack socket
                 sockaddr = (f"::ffff:{v4}", port, 0, 0)
 
-            logging.info(f"Sending packet to {sockaddr}")
+            logger.info(f"Sending packet to {sockaddr}")
             self.transport.sendto(data, sockaddr)
 
     async def recv(self, maxcount=0):
@@ -202,6 +202,27 @@ class DiscoverClient:
         '''
         async for data, addr in self.proto.recv(maxcount=maxcount):
             yield data, addr
+
+    async def discoverReplies(self, maxcount=0):
+        '''
+        Async generator yielding received Discover Protocol replies as they arrive
+
+        Will not terminate unless the close() method is called from another task (e.g. from
+        a loop.call_later()) or maxcount (default 0, no limit) packets have been yielded.
+        '''
+        async for data, addr in self.recv(maxcount=maxcount):
+            if data:
+                logger.info(f"Received {len(data)} bytes from {addr}")
+                logger.debug(data.hex())
+                packet = hdhr.Packet.parse(data)
+
+                logger.info(f"{packet.packetType.name} packet with {len(packet.payload.fields)} fields")
+                logger.debug(packet)
+
+                # n.b. we will also hear our own discover REQUESTS on broadcast or ff02::1
+                if packet.packetType == hdhr.PacketType.DISCOVER_RPY:
+                    yield processResponse(packet)
+
 
     def sendDiscover(self, host=None, port=TARGET_PORT):
         '''
@@ -236,7 +257,7 @@ class DiscoverClient:
         #       ff02::1 (all hosts) and ff02::176 (HDHR discovery link-local multicast group)
         #       Do the same if we receive a link-local unicast IPv6 target without a scope specified.
 
-        logger.info("Sending DISCOVER packets...")
+        logger.debug("Sending DISCOVER packets...")
         if not host:
             for addr in [
                 IPV4_BROADCAST,
@@ -256,44 +277,20 @@ async def main(host, port):
     client.sendDiscover(host, port)
 
     replies = []
-    # Iterate over all UDP reponse packets received
-    async for data, addr in client.recv():
-        if data:
-            logging.info(f"Received {len(data)} bytes from {addr}")
-            logging.debug(data.hex())
-            packet = hdhr.Packet.parse(data)
+    # Iterate over all replies received as they arrive
+    # Note that these should be consolidated to dedup multiple replies from the same device
+    async for reply in client.discoverReplies():
+        print(reply)
 
-            logging.info(f"{packet.packetType.name} packet with {len(packet.payload.fields)} fields")
-            logging.debug(packet)
-
-            # n.b. we will also hear our own discover REQUESTS on broadcast or ff02::1
-            if packet.packetType == hdhr.PacketType.DISCOVER_RPY:
-                replies.append(packet)
-
-
-            # minimal discovery response contains
-            # DEVICE_TYPE uint32_t and DEVICE_ID uint32_t fields
-            # HDTC-US2 also provides fields
-            #  - MULTI_TYPE uint32_t
-            #  - DEVICE_AUTH_STR str, no NUL termination
-            #  - TUNER_COUNT uint8_t
-            #  - BASE_URL str, no NUL termination
-            #  - LINEUP_URL str, no NUL termination
-            # Additional fields with new tag numbers may be added in the future.
-            # TODO: Fix parsing of unknown TAGs
-
-            logging.info(pprint.pformat(processResponse(packet)))
-        else:
-            logging.info("No data from {addr}")
     await client.join()
 
-    # TODO: process raw packets into dicts of fields
-    logging.info(f"{len(replies)} discover replies received.")
+    logger.info(f"{len(replies)} discover replies received.")
 
     return 0
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
+    #logging.basicConfig(level=logging.DEBUG)
 
     host = os.environ.get('HOST')
     port = int(os.environ.get('PORT', TARGET_PORT))
