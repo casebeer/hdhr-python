@@ -4,8 +4,11 @@ import argparse
 import sys
 import os
 import pprint
+import asyncio
 
 from control import ControlClient
+from client import HdhrClient
+from scan import ScanManager
 import fields
 
 logger = logging.getLogger(__name__)
@@ -18,7 +21,7 @@ LOG_VERBOSITY = {
     2: logging.DEBUG,
 }
 
-def cliClient(args) -> int:
+async def cliClient(args) -> int:
     logging.basicConfig(level=LOG_VERBOSITY.get(args.verbose, logging.DEBUG))
 
     host = os.environ.get('HDHR_HOST')
@@ -30,14 +33,30 @@ def cliClient(args) -> int:
     if args.port is not None:
         port = args.port
 
-    client = ControlClient(host, port)
+    #client = ControlClient(host, port)
+    client = await HdhrClient.create(host)
 
-    data = {}
+    import collections
+    data = collections.defaultdict(dict)
 
-    logger.debug(f"{'get' if args.value is None else 'set'} {args.endpoint} {args.value if args.value is not None else ''}")
-    if args.endpoint is None:
+    logger.debug(f"host={host} scan={args.legacy_scan} scan_upload={args.legacy_scan_and_upload} "
+                 f"endpoint={args.endpoint} value={args.value}")
+    if not host:
+        # discovery mode
+        async for reply in client.discover():
+            data[reply["DEVICE_ID"]].update(reply)
+    elif args.legacy_scan:
+        # --legacy-scan
+        data.update(await ScanManager(client).scan())
+
+    elif args.legacy_scan_and_upload:
+        # --legacy-scan-and-upload
+        data.update(await ScanManager(client).upload())
+
+    elif args.endpoint is None:
         # no endpoint set, dumpe all variables
         data.update(getAllFields(client))
+        data.update(await client.discoverOne())
     elif args.value is not None:
         # set
         data.update(client.set(args.endpoint, args.value))
@@ -45,7 +64,7 @@ def cliClient(args) -> int:
         # get
         data.update(client.get(args.endpoint))
 
-    pprint.pprint(data)
+    pprint.pprint(dict(data))
 
     # restart device
     #pprint.pprint(client.set(fields.ControlFields.SYS_RESTART, "self"))
@@ -63,7 +82,7 @@ def getAllFields(client):
     return data
 
 
-def main() -> int:
+async def main() -> int:
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -92,6 +111,31 @@ def main() -> int:
     )
 
     parser.add_argument(
+        "-s",
+        "--legacy-scan",
+        default=0,
+        action="store_true",
+        help="Perform a legacy device channel scan and print the result to stdout."
+             "Any positional parameters will be ignored.",
+    )
+
+    parser.add_argument(
+        "--legacy-scan-and-upload",
+        default=0,
+        action="store_true",
+        help="Perform a legacy device channel scan and upload the result to api.hdhomerun.com."
+             "A legacy channel scan should only be needed on \"legacy\" tuner devices (i.e. HDHR3 "
+             "and earlier). Devices which can run and store a channel scan on-device through the "
+             "web interface do not need a legacy channel scan. Legacy devices must perform and "
+             "upload a channel scan before modern HDHomeRun client apps can make use of them. "
+             "The official way to perform and upload this channel scan is using the SiliconDust "
+             "Windows client app."
+             "WARNING, DESCTRUCTIVE: Will overwrite previous channel scan data for the device "
+             "stored on the Silicon Dust servers."
+             "Any positional parameters will be ignored.",
+    )
+
+    parser.add_argument(
         "endpoint",
         nargs="?",
         help="Control API endpoint/variable name to get or set. "
@@ -109,7 +153,7 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    return cliClient(args)
+    return await cliClient(args)
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(asyncio.run(main()))
