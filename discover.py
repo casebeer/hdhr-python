@@ -74,6 +74,7 @@ class UdpProtocol(asyncio.DatagramProtocol):
         self._receiveBuffer = asyncio.Queue() # OK outside async
 
     def datagram_received(self, data, addr):
+        logging.debug(f'Got {len(data)} byte UDP packet from {addr}')
         self._receiveBuffer.put_nowait((data, addr)) # n.b. exception if Queue full
 
     def connection_made(self, transport):
@@ -190,7 +191,7 @@ class DiscoverClient:
                 # create mapped ipv4 address for sending on dualstack socket
                 sockaddr = (f"::ffff:{v4}", port, 0, 0)
 
-            logger.info(f"Sending packet to {sockaddr}")
+            logger.debug(f"Sending packet to {sockaddr}")
             self.transport.sendto(data, sockaddr)
 
     async def recv(self, maxcount=0):

@@ -3,6 +3,9 @@ import hdhr
 from control import ControlClient
 from discover import DiscoverClient
 
+import logging
+logger = logging.getLogger(__name__)
+
 class HdhrClient:
     def __init__(self, host, controlClient, discoverClient):
         self.host = host
@@ -10,11 +13,11 @@ class HdhrClient:
         self.discoverClient = discoverClient
 
     @classmethod
-    async def create(cls, host):
+    async def create(cls, host, controlPort=65001, discoverPort=65001):
         return cls(
             host=host,
-            controlClient=ControlClient(host),
-            discoverClient=await DiscoverClient.create(),
+            controlClient=ControlClient(host, port=controlPort),
+            discoverClient=await DiscoverClient.create(bind_port=discoverPort),
         )
 
     def get(self, endpoint):
@@ -38,6 +41,8 @@ class HdhrClient:
         Most useful if self.host is the IP address of a specific device, and we just want to
         retrieve the device ID and auth token.
         '''
-        async for reply in self.discover(maxcount=1):
+        async for reply in self.discover():
             # break out of loop after first reply
             return reply
+        logger.warn("No discovery replies received")
+        return {}

@@ -34,16 +34,17 @@ async def cliClient(args) -> int:
         port = args.port
 
     #client = ControlClient(host, port)
-    client = await HdhrClient.create(host)
+    # TODO: separate config for discoverPort
+    client = await HdhrClient.create(host, controlPort=port, discoverPort=port)
 
     import collections
     data = collections.defaultdict(dict)
 
     logger.debug(f"host={host} scan={args.legacy_scan} scan_upload={args.legacy_scan_and_upload} "
                  f"endpoint={args.endpoint} value={args.value}")
-    if not host:
+    if not host or args.discover:
         # discovery mode
-        async for reply in client.discover():
+        async for reply in client.discover(): # HdhrClient.discover() sends to HdhrClient.host
             data[reply["DEVICE_ID"]].update(reply)
     elif args.legacy_scan:
         # --legacy-scan
@@ -108,6 +109,16 @@ async def main() -> int:
         default=0,
         action="count",
         help="Set logging verbosity. Specify multiple times for more detail.",
+    )
+
+    parser.add_argument(
+        "-d",
+        "--discover",
+        default=0,
+        action="store_true",
+        help="Perform a discovery API request to --host."
+             "Host can be a broadcast or multicast address, including a scoped IPv6 "
+             "link-local address, e.g. fe80::1234%eno1.",
     )
 
     parser.add_argument(
