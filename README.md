@@ -65,6 +65,12 @@ replies (untested with actual HDHR devices):
 
     $ hdhr --host ff02::176%en1 --discover
 
+### Logging verbosity
+
+Set `-v` or `-vv` to print `INFO` and `DEBUG` level logging to `/dev/stderr`:
+
+    $ hdhr -v
+
 ### Help
 
 Print `hdhr` CLI usage help:
