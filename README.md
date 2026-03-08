@@ -42,23 +42,23 @@ Send discover packets to broadcast/multicast addresses on LAN
 
 "get" all known endpoints, including discover protocol fields, and print them out
 
-    $ hdhr --host 192.0.1.123
+    $ hdhr --host 192.0.2.123
 
 Return a single JSON object with all fields found on device:
 
-    $ hdhr --host 192.0.1.123 --json
+    $ hdhr --host 192.0.2.123 --json
 
 Print the value of `/sys/hwmodel`
 
-    $ hdhr --host 192.0.1.123 /sys/hwmodel
+    $ hdhr --host 192.0.2.123 /sys/hwmodel
 
 Set the value of `/tuner0/channel`
 
-    $ hdhr --host 192.0.1.123 /tuner0/channel auto:33
+    $ hdhr --host 192.0.2.123 /tuner0/channel auto:33
 
 Print just the discover data for a single device:
 
-    $ hdhr --host 192.0.1.123 --discover
+    $ hdhr --host 192.0.2.123 --discover
 
 Send a discover request to a link-local IPv6 multicast group from interface `en1` and print the
 replies (untested with actual HDHR devices):
@@ -79,19 +79,19 @@ Print `hdhr` CLI usage help:
 
 Print on-device help sent by HDHomeRun tuner showing available control protocol endpoints:
 
-    $ hdhr --host 192.0.1.123 help
+    $ hdhr --host 192.0.2.123 help
 
 ### Channel scans
 
 Start an on-device channel scan (for modern HDHR4+ devices). Note that this will overwrite the
 previous channel scan stored on the device:
 
-    $ hdhr --host 192.0.1.123 /lineup/scan start
+    $ hdhr --host 192.0.2.123 /lineup/scan start
 
 Perform a read-only (non-desctructive) legacy channel scan and print out the results. This will work
 on both legacy and modern devices:
 
-    $ hdhr --host 192.0.1.123 --legacy-scan -v
+    $ hdhr --host 192.0.2.123 --legacy-scan -v
 
 Perform a legacy channel scan and upload it to the HDHomeRun servers for use by HDHomeRun viewing
 clients. This is necessary to use modern viewing clients with legacy devices.  Note that this will
@@ -100,31 +100,31 @@ overwrite any previous uploaded channel scan for this device.
 The offical way to perform this scan and upload process is to use the SiliconDust Windows app.
 Scanning and uploading is not supported in the official `hdhomerun_config` Linux CLI tool.
 
-    $ hdhr --host 192.0.1.123 --legacy-scan-and-upload -v
+    $ hdhr --host 192.0.2.123 --legacy-scan-and-upload -v
 
 You can also pass a `--channels <comma separated list of channels>` option with either
 `--legacy-scan` or `--legacy-scan-and-upload` to scan only specific RF channels or frequencies:
 
-    $ hdhr --host 192.0.1.123 --legacy-scan -v --channels 20,21,22
+    $ hdhr --host 192.0.2.123 --legacy-scan -v --channels 20,21,22
 
 ### Tuning
 
 Tune a modern tuner to a virtual channel:
 
-    $ hdhr --host 192.0.1.123 /tuner0/vchannel 13.1
+    $ hdhr --host 192.0.2.123 /tuner0/vchannel 13.1
 
 Tune a legacy tuner to a virtual channel. Note that you'll need to know ahead of time what RF
 channel and/or frequency to start from (for example, from a previous channel scan):
 
-    $ hdhr --host 192.0.1.123 /tuner0/channel auto:12
+    $ hdhr --host 192.0.2.123 /tuner0/channel auto:12
 
 Alternatively, you can set the RF channel by frequency in Hertz:
 
-    $ hdhr --host 192.0.1.123 /tuner0/channel auto:207000000
+    $ hdhr --host 192.0.2.123 /tuner0/channel auto:207000000
 
 Now find the correct program ID for virtual channel 13.1:
 
-    $ hdhr --host 192.0.1.123 /tuner0/streaminfo
+    $ hdhr --host 192.0.2.123 /tuner0/streaminfo
     /tuner0/streaminfo
         1: 2.1 WCBS-HD
         2: 2.2 STARTTV
@@ -136,11 +136,11 @@ Now find the correct program ID for virtual channel 13.1:
 
 And set that program:
 
-    $ hdhr --host 192.0.1.123 /tuner0/program 3
+    $ hdhr --host 192.0.2.123 /tuner0/program 3
 
 You can now send that video to a receiver on the network:
 
-    $ hdhr --host 192.0.1.123 /tuner0/target udp://192.0.1.254:8000
+    $ hdhr --host 192.0.2.123 /tuner0/target udp://192.0.2.254:8000
 
 ### Locking and unlocking the tuner's "lockkey"
 
@@ -150,7 +150,7 @@ you delete the lockkey.
 If the tuner has been locked by another device and you need to force it to unlock, set the lockkey
 to `force`:
 
-    $ hdhr --host 192.0.1.123 /tuner0/lockkey force
+    $ hdhr --host 192.0.2.123 /tuner0/lockkey force
 
 ### Python API usage
 
