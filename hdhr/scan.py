@@ -233,7 +233,7 @@ class ScanManager:
                 if tsid is None:
                     # streaminfo() has already retried, bail out
                     logger.warn(f"Unable to get streaminfo after getting tuning lock on "
-                                f"ch{tuning['rfChannel']}. Skipping channel.")
+                                f"ch{rfChannel}. Skipping channel.")
                     continue
 
                 logger.info(f"TSID: 0x{tsid:04X}")
@@ -246,7 +246,7 @@ class ScanManager:
                     logger.info(f"PROGRAM {programNumber}: {vChannel} {vName}")
 
                     program = VChannel(
-                        rfChannel=tuning.get("rfChannel"),
+                        rfChannel=rfChannel,
                         frequency=tuning.get("frequency"),
                         modulation=tuning["lock"],
                         tsid=tsid,
@@ -349,10 +349,10 @@ class ScanManager:
             else:
                 break
 
-        rfChannel = tuning["rfChannel"]
+        requestedChannel = tuning["requestedChannel"]
         frequency = tuning["frequency"]
         ss, snq, seq = tuning["ss"], tuning["snq"], tuning["seq"]
-        logger.info(f"LOCK: {lock} (ss={ss} snq={snq} seq={seq}) {self.channelmap}:{rfChannel} {f'{frequency} Hz' if frequency else ''} ({retries+1} attempts)")
+        logger.info(f"LOCK: {lock} (ss={ss} snq={snq} seq={seq}) {self.channelmap}:{requestedChannel} {f'{frequency} Hz' if frequency else ''} ({retries+1} attempts)")
         return tuning
 
 
@@ -366,13 +366,13 @@ class ScanManager:
         tun = debug["tun"]
 
         lock, _, frequency = tun["lock"].partition(":")
-        _, _, rfChannel = tun["ch"].partition(":")
+        _, _, requestedChannel = tun["ch"].partition(":")
         ss, snq, seq = tun["ss"], tun["snq"], tun["seq"]
 
         return {
             'lock': None if lock == 'none' else lock,
             'frequency': int(frequency) if frequency else None,
-            'rfChannel': int(rfChannel) if rfChannel else None,
+            'requestedChannel': int(requestedChannel) if requestedChannel else None,
             'ss': int(ss) if ss else None,
             'snq': int(snq) if snq else None,
             'seq': int(seq) if seq else None,
@@ -390,6 +390,36 @@ class ScanManager:
 '''
 
 def parseTunerDebugString(debugString):
+    '''
+    Parse /tuner<n>/debug output
+
+    Definitions from https://www.silicondust.com/hdhomerun/hdhomerun_tech.pdf:
+
+    Tuner status
+    tun: ch=auto:21 lock=8vsb:515000000 ss=80 snq=76 seq=100 dbg=-514/13110
+        ch - requested channel
+        lock - modulation detected
+        ss - signal strength
+        snq - signal to noise quality (MER, modulation error ratio)
+        seq - symbolic error quality (based on number of uncorrectable digital errors detected)
+        bps - raw channel bits per second
+        pps - packets per second sent through the network
+
+    Device status
+    dev: bps=19394080 resync=0 overflow=0
+
+    Transport stream status
+    ts:  bps=19394080 te=0 crc=0
+        bps - bit per second
+        te - transport error (uncorrectable reception) counter
+        crc - crc error counter
+
+    Network status
+    net: pps=0 err=0 stop=0
+        pps - packets per second
+        err - packets or TS frames dropped
+        stop - reason for stopping stream
+    '''
     data = collections.defaultdict(lambda: collections.defaultdict(dict))
     for group in debugString.split("\n"):
         if group.strip():
