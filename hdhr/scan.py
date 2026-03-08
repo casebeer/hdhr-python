@@ -192,19 +192,23 @@ class ScanManager:
                        '15: 43.12 EMLW\n'
                        'tsid=0x01F7\n'}
     '''
-    async def scan(self):
+    async def scan(self, channels: list=None):
         # TODO: retrieve channelmap from device
         # TODO: determine valid rfChannel and/or rfFrequency ranges for channelmaps
+
+        if channels is None or len(channels) == 0:
+            channels = CHANNELS[self.channelmap]
+
         startTime = time.time()
-        self.channelScan = await self.rfScan(CHANNELS[self.channelmap])
+        self.channelScan = await self.rfScan(channels)
         duration = time.time() - startTime
         logging.info(f"Channel scan completed. Found {len(self.channelScan.lineup)} channels "
                      f"in {round(duration, 1)} seconds.")
         return {"lineup": self.channelScan.to_dict()}
 
-    async def upload(self):
+    async def upload(self, channels: list=None):
         if not self.channelScan:
-            await self.scan()
+            await self.scan(channels)
 
         ScanUploadClient.upload(self.channelScan, self.deviceAuth)
 

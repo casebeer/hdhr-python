@@ -32,12 +32,13 @@ async def cliClient(args) -> int:
     if args.port is not None:
         port = args.port
 
-    #client = ControlClient(host, port)
     # TODO: separate config for discoverPort
     client = await HdhrClient.create(host, controlPort=port, discoverPort=port)
 
     import collections
     data = collections.defaultdict(dict)
+
+    channels = [int(c.strip()) for c in args.channels.split(",") if len(c) > 0]
 
     logger.debug(f"host={host} scan={args.legacy_scan} scan_upload={args.legacy_scan_and_upload} "
                  f"endpoint={args.endpoint} value={args.value}")
@@ -47,11 +48,11 @@ async def cliClient(args) -> int:
             data[reply["DEVICE_ID"]].update(reply)
     elif args.legacy_scan:
         # --legacy-scan
-        data.update(await ScanManager(client).scan())
+        data.update(await ScanManager(client).scan(channels=channels))
 
     elif args.legacy_scan_and_upload:
         # --legacy-scan-and-upload
-        data.update(await ScanManager(client).upload())
+        data.update(await ScanManager(client).upload(channels=channels))
 
     elif args.endpoint is None:
         # no endpoint set, dumpe all variables
@@ -110,6 +111,12 @@ async def main() -> int:
         action="store_true",
         help="Perform a legacy device channel scan and print the result to stdout."
              "Any positional parameters will be ignored.",
+    )
+    parser.add_argument(
+        "--channels",
+        default="",
+        help="Comma separated list of RF channels to use with --legacy-scan or "
+             "--legacy-scan-and-upload. Optional. Scans default to all channels."
     )
 
     parser.add_argument(

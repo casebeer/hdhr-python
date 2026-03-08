@@ -81,7 +81,7 @@ previous channel scan stored on the device:
 Perform a read-only (non-desctructive) legacy channel scan and print out the results. This will work
 on both legacy and modern devices:
 
-    $ hdhr --host 192.0.1.123 --legacy-scan
+    $ hdhr --host 192.0.1.123 --legacy-scan -v
 
 Perform a legacy channel scan and upload it to the HDHomeRun servers for use by HDHomeRun viewing
 clients. This is necessary to use modern viewing clients with legacy devices.  Note that this will
@@ -90,7 +90,12 @@ overwrite any previous uploaded channel scan for this device.
 The offical way to perform this scan and upload process is to use the SiliconDust Windows app.
 Scanning and uploading is not supported in the official `hdhomerun_config` Linux CLI tool.
 
-    $ hdhr --host 192.0.1.123 --legacy-scan-and-upload
+    $ hdhr --host 192.0.1.123 --legacy-scan-and-upload -v
+
+You can also pass a `--channels <comma separated list of channels>` option with either
+`--legacy-scan` or `--legacy-scan-and-upload` to scan only specific RF channels or frequencies:
+
+    $ hdhr --host 192.0.1.123 --legacy-scan -v --channels 20,21,22
 
 ### Tuning
 
