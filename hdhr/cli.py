@@ -5,6 +5,8 @@ import sys
 import os
 import pprint
 import asyncio
+import json
+import textwrap
 
 from control import ControlClient
 from client import HdhrClient
@@ -64,7 +66,36 @@ async def cliClient(args) -> int:
         # get
         data.update(await client.get(args.endpoint))
 
-    pprint.pprint(dict(data))
+    handleOutput(data, outputJson=args.json)
+
+def handleOutput(data, outputJson=False):
+    if outputJson:
+        print(json.dumps(dict(data), indent=2))
+    else:
+        print(textFormat(dict(data)))
+
+def textFormat(data):
+    '''
+    Output custom format
+
+    Keys followed by values on the next line, indented four spaces.
+    '''
+    output = []
+    #output.append(str(type(data)))
+    if type(data) == dict:
+        for k,v in data.items():
+            output.append(f"{k}")
+            output.append(textwrap.indent(textFormat(v), "    "))
+    elif type(data) == list:
+        for v in data:
+            # hanging indent beacuse of two characters of "- " bullet
+            lines = textFormat(v).splitlines(True)
+            for i in range(1, len(lines)):
+                lines[i] = f"  {lines[i]}"
+            output.append(f"- {''.join(lines)}")
+    else:
+        output.append(str(data).strip())
+    return "\n".join(output)
 
 async def main() -> int:
     parser = argparse.ArgumentParser()
@@ -102,6 +133,14 @@ async def main() -> int:
         help="Perform a discovery API request to --host."
              "Host can be a broadcast or multicast address, including a scoped IPv6 "
              "link-local address, e.g. fe80::1234%%eno1.",
+    )
+
+    parser.add_argument(
+        "-j",
+        "--json",
+        default=0,
+        action="store_true",
+        help="Output JSON objects",
     )
 
     parser.add_argument(

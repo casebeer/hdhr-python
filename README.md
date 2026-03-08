@@ -44,6 +44,10 @@ Send discover packets to broadcast/multicast addresses on LAN
 
     $ hdhr --host 192.0.1.123
 
+Return a single JSON object with all fields found on device:
+
+    $ hdhr --host 192.0.1.123 --json
+
 Print the value of `/sys/hwmodel`
 
     $ hdhr --host 192.0.1.123 /sys/hwmodel
@@ -115,13 +119,14 @@ Alternatively, you can set the RF channel by frequency in Hertz:
 Now find the correct program ID for virtual channel 13.1:
 
     $ hdhr --host 192.0.1.123 /tuner0/streaminfo
-    {'/tuner0/streaminfo': '3: 13.1 WNET-HD\n'
-                       '4: 13.2 KIDS\n'
-                       '5: 14.1 WNDT-CD\n'
-                       '6: 21.1 WLIW-HD\n'
-                       '7: 21.3 WORLD\n'
-                       '8: 21.4 AllArts\n'
-                       'tsid=0x07DB\n'}
+    /tuner0/streaminfo
+        1: 2.1 WCBS-HD
+        2: 2.2 STARTTV
+        3: 2.3 DABL
+        4: 2.4 365BLK
+        5: 2.5 COMET
+        6: 21.2 CREATE
+        tsid=0x086D
 
 And set that program:
 
