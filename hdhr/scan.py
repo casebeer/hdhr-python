@@ -217,7 +217,7 @@ class ScanManager:
     async def rfScan(self, rfChannels):
         lineup = []
 
-        discover = await self.client.discoverOne()
+        discover = await self.client.discoverOne() # target host from HdhrClient.host
         self.deviceId = discover['DEVICE_ID']
         self.deviceAuth = discover['DEVICE_AUTH_STR']
 

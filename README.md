@@ -165,6 +165,39 @@ You can now send that video to a receiver on the network:
 
     $ hdhr --host 192.0.2.123 /tuner0/target udp://192.0.2.254:8000
 
+### More complex discovery requests
+
+Note that when using the discovery API directly (i.e. when using the `--discover` or `--device`
+options), the `--host` option sets the address to which discovery requests are sent. This will
+usually be the local IPv4 broadcast address or an IPv6 mutlicast address, but could be any valid v4
+or v6 host you can reach. For example, you might be running a discovery protocol proxy on your
+network, and want to to arget discovery requests to that server.
+
+Discover to a custom unicast address, e.g. a proxy server:
+
+    $ hdhr --host 192.0.2.99 --discover
+
+Discover to a subnet's broadcast address rather than the local broadast address `255.255.255.255`:
+
+    # hdhr --host 192.168.2.255 --discover
+
+If you are using the `--device <device ID>` option, setting a `--host` will direct where to send the
+discovery requests that will hopefuly result in finding a device with a matching ID. Once a matching
+device has been found, the configured `--host` will be overwritten with the hostname of the
+discovered device, and all subsequent discover and control protocol requests will go to the
+*discovered* address, not the address you provided.
+
+Discover the address of device ID `1234abcd` via a custom discover protocol proxy server at
+`192.0.2.99`, then query its `/sys/hwmodel` via the control API:
+
+    $ hdhr --host 192.0.2.99 --device 1234abcd /sys/hwmodel
+
+Discover the address of device ID `1234abcd` via a custom discover protocol proxy server at
+`192.0.2.99`, then send *another* discover request directly to the device itself to print out its
+device info:
+
+    $ hdhr --host 192.0.2.99 --device 1234abcd --discover
+
 ### Locking and unlocking the tuner's "lockkey"
 
 Setting a tuner's "lockkey" prevents other devices on the network from taking over the tuner until

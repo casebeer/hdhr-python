@@ -7,6 +7,7 @@ import pprint
 import asyncio
 import json
 import textwrap
+import collections
 
 from control import ControlClient
 from client import HdhrClient
@@ -34,10 +35,24 @@ async def cliClient(args) -> int:
     if args.port is not None:
         port = args.port
 
+
     # TODO: separate config for discoverPort
     client = await HdhrClient.create(host, controlPort=port, discoverPort=port)
 
-    import collections
+    # n.b. we will change HdhrClient.host after it was already set
+    if args.device:
+        # TODO: Change DiscoverClient API to differentiate between directed unicast discovery
+        # parameter queries and broadcast discovery searches
+        host = await client.discoverDevice(args.device)
+        if host is not None:
+            client.host = host
+            logger.info(f"Found host {host} for device ID {args.device}")
+        else:
+            logging.error(f"Unable to find device with ID {args.device} on local network.")
+            return 1 # exit program
+    #sys.exit(0)
+
+
     data = collections.defaultdict(dict)
 
     channels = [int(c.strip()) for c in args.channels.split(",") if len(c) > 0]
@@ -126,7 +141,6 @@ async def main() -> int:
     )
 
     parser.add_argument(
-        "-d",
         "--discover",
         default=0,
         action="store_true",
@@ -141,6 +155,13 @@ async def main() -> int:
         default=0,
         action="store_true",
         help="Output JSON objects",
+    )
+
+    parser.add_argument(
+        "-d",
+        "--device",
+        default=0,
+        help="Connect to device by device id using broadcast/multicast discovery.",
     )
 
     parser.add_argument(

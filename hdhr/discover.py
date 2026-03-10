@@ -6,6 +6,7 @@ import pprint
 import struct
 import ipaddress
 import os
+import re
 
 import hdhr
 
@@ -65,6 +66,16 @@ def processResponse(response):
 
         else:
             logger.error(f"UNHANDLED RESPONSE TAG: {field.tag.name}")
+
+    # add "hostname" field parsed from BASE_URL
+    url = responseFields.get('BASE_URL')
+    matches = re.match(r'\w+://([^:/]+)', url)
+
+    if matches and len(matches.groups()) > 0:
+        responseFields["hostname"] = matches.group(1)
+    else:
+        responseFields["hostname"] = None
+
     return responseFields
 
 class UdpProtocol(asyncio.DatagramProtocol):
