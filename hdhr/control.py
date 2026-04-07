@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 
 MAX_PACKET_LENGTH = 4096 # octets
 
+class HdhrControlError(Exception):
+    pass
+
 class ControlClient:
     '''
     HDHomerun "Control Protocol" client
@@ -164,6 +167,7 @@ class ControlClient:
             elif field.tag == hdhr.PayloadTag.ERROR_MESSAGE:
                 value = field.value[:-1].decode(self.encoding)
                 logger.warn(f"ERROR: {value} {requestFieldName}")
+                raise HdhrControlError(f"{value} {requestFieldName}")
                 responseFields[name]: value
                 value = None
             else:

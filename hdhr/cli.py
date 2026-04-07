@@ -169,8 +169,12 @@ async def main() -> int:
         "--legacy-scan",
         default=0,
         action="store_true",
-        help="Perform a legacy device channel scan and print the result to stdout."
-             "Any positional parameters will be ignored.",
+        help="Perform a legacy device (i.e. client-controlled) channel scan and print "
+             "the result to stdout. Any positional parameters will be ignored. Note that "
+             "a legacy scan may be performed on but is NOT necessary and will NOT update "
+             "scanned channel data on modern devices which support the /lineup/scan "
+             "command. On those devices, run an on-device channel scan with "
+             "hdhr --device <device id> /lineup/scan start"
     )
     parser.add_argument(
         "--channels",

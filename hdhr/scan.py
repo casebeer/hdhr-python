@@ -174,10 +174,7 @@ class ChannelScan:
 
 class ScanManager:
     channelmap = "us-bcast"
-    tuningWaitSeconds = 0.5
-    tuningRetries = 3
-    streaminfoRetries = 6
-    tuner = '/tuner0'
+    tuner = '/tuner1'
 
     def __init__(self, client):
         self.client = client
@@ -222,13 +219,13 @@ class ScanManager:
         self.deviceAuth = discover['DEVICE_AUTH_STR']
 
         for rfChannel in rfChannels:
-            await self.tune(rfChannel)
+            await self.client.tune(self.tuner, rfChannel)
 
-            tuning = await self.checkTuning()
+            tuning = await self.client.checkTuning(self.tuner)
 
             tsid = None
             if tuning["lock"] is not None:
-                tsid, programs = await self.streaminfo()
+                tsid, programs = await self.client.streaminfo(self.tuner)
 
                 if tsid is None:
                     # streaminfo() has already retried, bail out
@@ -262,122 +259,6 @@ class ScanManager:
         return channelScan
 
 
-    '''
-    INFO:scan:SCANNING: _ (us-bcast:18)
-    INFO:scan:LOCK: 8vsb (ss=78 snq=64 seq=0) us-bcast:18 497000000 Hz
-    INFO:scan:TSID: 0x07DF
-    INFO:scan:PROGRAM 3: 0 (no data)
-    INFO:scan:PROGRAM 4: 0 (no data)
-    INFO:scan:PROGRAM 6: 0 (no data)
-    INFO:scan:PROGRAM 7: 0 (no data)
-    INFO:scan:PROGRAM 8: 0 (no data)
-    INFO:scan:PROGRAM 9: 0 (no data)
-    INFO:scan:PROGRAM 11: 0 (no data)
-    INFO:scan:PROGRAM 12: 0 (no data)
-    '''
-    async def streaminfo(self):
-        '''Attempt to get streaminfo with retries'''
-        for retries in range(self.streaminfoRetries):
-            tsid, programs = await self.streaminfoOnce()
-
-            if tsid is None or len(programs) == 0 or programs[0].get("vChannel") == "0":
-                # TSID should not be none if we have a tuner lock; we might just need a little
-                # more time for the tuner to get the TSID and program data. Sleep one more wait
-                # period and try again.
-
-                #print(tsid, len(programs) == 0, programs)
-                if retries < self.streaminfoRetries - 1:
-                    logger.warn(f"Unable to read streaminfo, waiting before retrying...")
-                tsid = None # mark the results as invalid
-                await asyncio.sleep(self.tuningWaitSeconds)
-                continue
-            else:
-                break
-        return tsid, programs
-
-    async def streaminfoOnce(self):
-        '''Attempt to get streaminfo once. No validation on output data'''
-        streaminfo = await self.client.get(f"{self.tuner}/streaminfo")
-        tsid = None
-        programs = []
-        for line in streaminfo.get(f"{self.tuner}/streaminfo").split("\n"):
-            program, delim, programData = line.partition(": ")
-            vChannel, _, vName = programData.partition(" ")
-            if delim == ": ":
-                # program info line
-                programs.append({
-                    "programNumber": int(program),
-                    "vChannel": vChannel,
-                    "vName": vName,
-                })
-            else:
-                # no program info found, must be TSID line
-                field, _, tsidString = line.partition("=")
-                if field.lower() == "tsid":
-                    tsid = int(tsidString, 16)
-
-        return tsid, programs
-
-    async def tune(self, rfChannel):
-        logger.info(f"SCANNING: _ ({self.channelmap}:{rfChannel})")
-        # TODO: Use high level client
-        result = await self.client.set(f"{self.tuner}/channel", str(rfChannel))
-        await asyncio.sleep(self.tuningWaitSeconds)
-        return result
-
-    '''
-    {'/tuner0/status': 'ch=auto:21 lock=8vsb ss=82 snq=79 seq=100 bps=0 pps=0'}
-    {'/tuner0/debug': 'tun: ch=auto:21 lock=8vsb:515000000 ss=80 snq=76 seq=100 '
-                      'dbg=-514/13110\n'
-                      'dev: bps=19394080 resync=0 overflow=0\n'
-                      'ts:  bps=19394080 te=0 crc=0\n'
-                      'net: pps=0 err=0 stop=0\n'}
-    '''
-    async def checkTuning(self):
-        '''Query the device's TCP API to get current tuner status with retries'''
-        for retries in range(self.tuningRetries):
-            tuning = await self.checkTuningOnce()
-
-            lock = tuning["lock"]
-
-            if lock is None:
-                #if retries < self.tuningRetries - 1:
-                #    logger.warn(f"Unable to get tuner lock, waiting before retrying...")
-
-                await asyncio.sleep(self.tuningWaitSeconds)
-                continue
-            else:
-                break
-
-        requestedChannel = tuning["requestedChannel"]
-        frequency = tuning["frequency"]
-        ss, snq, seq = tuning["ss"], tuning["snq"], tuning["seq"]
-        logger.info(f"LOCK: {lock} (ss={ss} snq={snq} seq={seq}) {self.channelmap}:{requestedChannel} {f'{frequency} Hz' if frequency else ''} ({retries+1} attempts)")
-        return tuning
-
-
-    async def checkTuningOnce(self):
-        '''Query the device's TCP API to get current tuner status'''
-        #self.client.get(fields.TunerFields.DEBUG.value.format(self.tunerNumber))
-        responseData = await self.client.get(f"{self.tuner}/debug") # already processed
-        debugString = responseData[f"{self.tuner}/debug"]
-        debug = parseTunerDebugString(debugString)
-
-        tun = debug["tun"]
-
-        lock, _, frequency = tun["lock"].partition(":")
-        _, _, requestedChannel = tun["ch"].partition(":")
-        ss, snq, seq = tun["ss"], tun["snq"], tun["seq"]
-
-        return {
-            'lock': None if lock == 'none' else lock,
-            'frequency': int(frequency) if frequency else None,
-            'requestedChannel': int(requestedChannel) if requestedChannel else None,
-            'ss': int(ss) if ss else None,
-            'snq': int(snq) if snq else None,
-            'seq': int(seq) if seq else None,
-        }
-
 '''
 {
   "Frequency": 593000000,
@@ -389,45 +270,6 @@ class ScanManager:
 },
 '''
 
-def parseTunerDebugString(debugString):
-    '''
-    Parse /tuner<n>/debug output
-
-    Definitions from https://www.silicondust.com/hdhomerun/hdhomerun_tech.pdf:
-
-    Tuner status
-    tun: ch=auto:21 lock=8vsb:515000000 ss=80 snq=76 seq=100 dbg=-514/13110
-        ch - requested channel
-        lock - modulation detected
-        ss - signal strength
-        snq - signal to noise quality (MER, modulation error ratio)
-        seq - symbolic error quality (based on number of uncorrectable digital errors detected)
-        bps - raw channel bits per second
-        pps - packets per second sent through the network
-
-    Device status
-    dev: bps=19394080 resync=0 overflow=0
-
-    Transport stream status
-    ts:  bps=19394080 te=0 crc=0
-        bps - bit per second
-        te - transport error (uncorrectable reception) counter
-        crc - crc error counter
-
-    Network status
-    net: pps=0 err=0 stop=0
-        pps - packets per second
-        err - packets or TS frames dropped
-        stop - reason for stopping stream
-    '''
-    data = collections.defaultdict(lambda: collections.defaultdict(dict))
-    for group in debugString.split("\n"):
-        if group.strip():
-            groupName, _, groupString = group.strip().partition(": ")
-            for key, _, value in [field.strip().partition("=") for field in groupString.split()]:
-                #print(f"[{groupName}] {key}: {value}")
-                data[groupName][key] = value
-    return data
 
 class ScanUploadClient:
     apiBase = "https://api.hdhomerun.com"
@@ -444,7 +286,8 @@ class ScanUploadClient:
         apiUriTemplate = f"{cls.apiBase}{cls.apiEndpoint}"
         apiUri = apiUriTemplate.format(deviceAuth=deviceAuth)
         #print(scan.scanUploadJson())
-        logger.info(f"Uploading channel scan data ({len(scan.lineup)} channels) to {self.apiBase}...")
+        logger.info(
+            f"Uploading channel scan data ({len(scan.lineup)} channels) to {self.apiBase}...")
         req = urllib.request.Request(
             apiUri,
             method="POST",
