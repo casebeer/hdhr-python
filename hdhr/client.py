@@ -212,18 +212,16 @@ class HdhrClient:
                       'ts:  bps=19394080 te=0 crc=0\n'
                       'net: pps=0 err=0 stop=0\n'}
     '''
-    async def checkTuning(self, tuner):
+    async def tunerStatus(self, tuner: str) -> tuning.TunerStatus:
         '''
         Query the device's TCP API to get current tuner status with retries
 
         Tuning info is the "debug" data for the current RF channel.
         '''
         for retries in range(self.tuningRetries):
-            tuning = await self._checkTuningOnce(tuner)
+            tunerStatus = await self._tunerStatusOnce(tuner)
 
-            lock = tuning["lock"]
-
-            if lock is None:
+            if not tunerStatus.locked:
                 #if retries < self.tuningRetries - 1:
                 #    logger.warn(f"Unable to get tuner lock, waiting before retrying...")
 
@@ -232,33 +230,18 @@ class HdhrClient:
             else:
                 break
 
-        requestedChannel = tuning["requestedChannel"]
-        frequency = tuning["frequency"]
-        ss, snq, seq = tuning["ss"], tuning["snq"], tuning["seq"]
-        logger.info(f"LOCK: {lock} (ss={ss} snq={snq} seq={seq}) "
-                    #f"{self.channelmap}:{requestedChannel} "
-                    f"RequestedRF:{requestedChannel} "
-                    f"{f'{frequency} Hz' if frequency else ''} ({retries+1} attempts)")
-        return tuning
+        logger.info(f"LOCK: {tunerStatus.lockedModulation} (ss={tunerStatus.signalStrengthPercent} "
+                    f"snq={tunerStatus.modulationErrorRatioSnqPercent} "
+                    f"seq={tunerStatus.symbolErrorQualityPercent}) "
+                    #f"{self.channelmap}:{tunerStatus.requestedChannel} "
+                    f"RequestedRF:{tunerStatus.requestedChannel} "
+                    f"{f'{tunerStatus.lockedFrequency} Hz' if tunerStatus.lockedFrequency else ''} "
+                    f"({retries+1} attempts)")
+        return tunerStatus
 
-    async def _checkTuningOnce(self, tuner):
+    async def _tunerStatusOnce(self, tuner):
         '''Query the device's TCP API to get current tuner status'''
         #self.get(fields.TunerFields.DEBUG.value.format(self.tunerNumber))
         responseData = await self.get(f"{tuner}/debug") # already processed
         debugString = responseData[f"{tuner}/debug"]
-        debug = tuning.parseTunerDebugString(debugString)
-
-        tun = debug["tun"]
-
-        lock, _, frequency = tun["lock"].partition(":")
-        _, _, requestedChannel = tun["ch"].partition(":")
-        ss, snq, seq = tun["ss"], tun["snq"], tun["seq"]
-
-        return {
-            'lock': None if lock == 'none' else lock,
-            'frequency': int(frequency) if frequency else None,
-            'requestedChannel': int(requestedChannel) if requestedChannel else None,
-            'ss': int(ss) if ss else None,
-            'snq': int(snq) if snq else None,
-            'seq': int(seq) if seq else None,
-        }
+        return tuning.TunerStatus.fromDebugString(debugString)

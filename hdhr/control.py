@@ -15,6 +15,20 @@ MAX_PACKET_LENGTH = 4096 # octets
 class HdhrControlError(Exception):
     pass
 
+class UnknownFieldError(HdhrControlError):
+    '''ERROR: unknown getset variable'''
+    pass
+
+class UnknownFieldSetError(UnknownFieldError):
+    pass
+
+class UnknownFieldGetError(UnknownFieldError):
+    pass
+
+class TunerInUse(HdhrControlError):
+    '''ERROR: unknown getset variable'''
+    pass
+
 class ControlClient:
     '''
     HDHomerun "Control Protocol" client
@@ -130,7 +144,7 @@ class ControlClient:
         )
 
         response: hdhr.Packet = await self.request(packet)
-        return self.processResponse(response, requestFieldName)
+        return self.processResponse(response, requestFieldName, writeAttempt=True)
 
     async def get(self, requestFieldName: str):
 
@@ -151,7 +165,7 @@ class ControlClient:
 
         return self.processResponse(response, requestFieldName)
 
-    def processResponse(self, response: hdhr.Packet, requestFieldName):
+    def processResponse(self, response: hdhr.Packet, requestFieldName, writeAttempt=False):
         name = None
         value = None
         logger.debug(response)
@@ -166,13 +180,38 @@ class ControlClient:
                 name, value = None, None
             elif field.tag == hdhr.PayloadTag.ERROR_MESSAGE:
                 value = field.value[:-1].decode(self.encoding)
-                logger.warn(f"ERROR: {value} {requestFieldName}")
-                raise HdhrControlError(f"{value} {requestFieldName}")
+                try:
+                    handleDeviceError(value, requestFieldName, writeAttempt)
+                except UnknownFieldGetError as e:
+                    logger.debug(f"Device Error:{repr(e)}")
+
                 responseFields[name]: value
                 value = None
             else:
                 logger.warn(f"UNHANDLED RESPONSE TAG: {field.tag.name}")
         return responseFields
+
+def handleDeviceError(errorString, requestFieldName, writeAttempt):
+    '''
+    Decide how to handle errors getting or setting fields on device
+
+    Dispatch device errors as granular Python exceptions.
+    '''
+    errorSummary = (f"{errorString} "
+                    f"[{'set' if writeAttempt else 'get'} {requestFieldName}]")
+    if errorString.startswith("ERROR: resource locked by"):
+        raise TunerInUse(errorSummary)
+    elif errorString.startswith("ERROR: unknown getset variable"):
+        if writeAttempt:
+            raise UnknownFieldSetError(errorSummary)
+        else:
+            raise UnknownFieldGetError(errorSummary)
+    elif writeAttempt:
+        # default set error
+        raise HdhrControlError(errorSummary)
+    else:
+        # default get error
+        raise HdhrControlError(errorSummary)
 
 async def main():
     logging.basicConfig(level=logging.INFO)

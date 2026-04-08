@@ -71,6 +71,9 @@ async def cliClient(args) -> int:
         # --legacy-scan-and-upload
         data.update(await ScanManager(client).upload(channels=channels))
 
+    elif args.tuner_status is not None:
+        data.update({ f"tunerStatus{args.tuner_status}": await client.tunerStatus(f"/tuner{args.tuner_status}") })
+
     elif args.endpoint is None:
         # no endpoint set, dumpe all variables
         data.update(await client.getAllFields())
@@ -197,6 +200,13 @@ async def main() -> int:
              "WARNING, DESCTRUCTIVE: Will overwrite previous channel scan data for the device "
              "stored on the Silicon Dust servers."
              "Any positional parameters will be ignored.",
+    )
+
+    parser.add_argument(
+        "--tuner-status",
+        default=None,
+        type=int,
+        help="Display TunerStatus for specified tuner number"
     )
 
     parser.add_argument(

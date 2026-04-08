@@ -221,10 +221,10 @@ class ScanManager:
         for rfChannel in rfChannels:
             await self.client.tune(self.tuner, rfChannel)
 
-            tuning = await self.client.checkTuning(self.tuner)
+            tunerStatus = await self.client.tunerStatus(self.tuner)
 
             tsid = None
-            if tuning["lock"] is not None:
+            if tunerStatus.locked:
                 tsid, programs = await self.client.streaminfo(self.tuner)
 
                 if tsid is None:
@@ -244,14 +244,14 @@ class ScanManager:
 
                     program = VChannel(
                         rfChannel=rfChannel,
-                        frequency=tuning.get("frequency"),
-                        modulation=tuning["lock"],
+                        frequency=tunerStatus.lockedFrequency,
+                        modulation=tunerStatus.lockedModulation,
                         tsid=tsid,
                         programNumber=programNumber,
                         vChannel=vChannel,
                         vName=vName,
-                        signalStrength=tuning.get("ss"),
-                        signalQuality=tuning.get("snq"),
+                        signalStrength=tunerStatus.signalStrengthPercent,
+                        signalQuality=tunerStatus.modulationErrorRatioSnqPercent,
                     )
                     lineup.append(program)
 
