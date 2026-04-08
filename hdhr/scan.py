@@ -224,11 +224,11 @@ class ScanManager:
                      f"in {round(duration, 1)} seconds.")
         return {"lineup": self.channelScan.to_dict()}
 
-    async def upload(self, channels: list=None):
+    async def upload(self, channels: list=None, apiBase=None, dryRun=False):
         if not self.channelScan:
             await self.scan(channels)
 
-        ScanUploadClient.upload(self.channelScan, self.deviceAuth)
+        ScanUploadClient.upload(self.channelScan, self.deviceAuth, apiBase=apiBase, dryRun=dryRun)
 
         return {"lineup": self.channelScan}
 
@@ -304,12 +304,21 @@ class ScanUploadClient:
     )
 
     @classmethod
-    def upload(cls, scan, deviceAuth):
-        apiUriTemplate = f"{cls.apiBase}{cls.apiEndpointTemplate}"
+    def upload(cls, scan, deviceAuth, apiBase=None, dryRun=False):
+        apiBase = apiBase if apiBase is not None else cls.apiBase
+        apiUriTemplate = f"{apiBase}{cls.apiEndpointTemplate}"
         apiUri = apiUriTemplate.format(deviceAuth=deviceAuth)
-        #print(scan.scanUploadJson())
-        logger.info(
-            f"Uploading channel scan data ({len(scan.lineup)} channels) to {self.apiBase}...")
+        if len(scan.lineup) == 0:
+            raise Exception("Cannot upload empty channel scan. Zero channels found.")
+        if dryRun:
+            logger.info("Legacy channel scan dry-run: "
+                        f"would upload {len(scan.lineup)} channels to {apiBase}")
+            #print(scan.scanUploadJson(indent=2))
+            return
+        else:
+            logger.info(
+                f"Uploading channel scan data ({len(scan.lineup)} channels) to {apiBase}...")
+
         req = urllib.request.Request(
             apiUri,
             method="POST",

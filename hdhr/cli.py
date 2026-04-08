@@ -11,7 +11,7 @@ import collections
 
 from .control import ControlClient
 from .client import HdhrClient
-from .scan import ScanManager
+from .scan import ScanManager, ScanUploadClient
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +26,8 @@ LOG_VERBOSITY = {
 async def cliClient(args) -> int:
     logging.basicConfig(level=LOG_VERBOSITY.get(args.verbose, logging.DEBUG))
 
+    logger.debug(f"CLI args: {args}")
+
     host = os.environ.get('HDHR_HOST')
     port = int(os.environ.get('HDHR_PORT', DEFAULT_PORT))
 
@@ -34,7 +36,6 @@ async def cliClient(args) -> int:
 
     if args.port is not None:
         port = args.port
-
 
     # TODO: separate config for discoverPort
     client = await HdhrClient.create(host, controlPort=port, discoverPort=port)
@@ -63,13 +64,22 @@ async def cliClient(args) -> int:
         # discovery mode
         async for reply in client.discover(): # HdhrClient.discover() sends to HdhrClient.host
             data[reply["DEVICE_ID"]].update(reply)
-    elif args.legacy_scan:
-        # --legacy-scan
-        data.update(await ScanManager(client).scan(channels=channels))
 
     elif args.legacy_scan_and_upload:
         # --legacy-scan-and-upload
-        data.update(await ScanManager(client).upload(channels=channels))
+        scanUploadOutput = await ScanManager(client).upload(channels=channels,
+                                                            apiBase=args.upload_uri,
+                                                            dryRun=args.upload_dry_run)
+        if args.upload_dry_run:
+            # in upload dry run, don't print normal format, print scanUploadJson format instead
+            print(scanUploadOutput['lineup'].scanUploadJson(indent=2))
+            return
+        else:
+            # otherwise, update output dict as usual
+            data.update(scanUploadOutput)
+    elif args.legacy_scan:
+        # --legacy-scan
+        data.update(await ScanManager(client).scan(channels=channels))
 
     elif args.tuner_status is not None:
         data.update({ f"tunerStatus{args.tuner_status}": await client.tunerStatus(f"/tuner{args.tuner_status}") })
@@ -200,6 +210,19 @@ async def main() -> int:
              "WARNING, DESCTRUCTIVE: Will overwrite previous channel scan data for the device "
              "stored on the Silicon Dust servers."
              "Any positional parameters will be ignored.",
+    )
+
+    parser.add_argument(
+        "--upload-uri",
+        default=None,
+        help="Base URI for legacy channel scan upload. Leave empty to use default "
+             f"{ScanUploadClient.apiBase}"
+    )
+    parser.add_argument(
+        "--upload-dry-run",
+        default=False,
+        action="store_true",
+        help="Generate and print legacy channel scan upload JSON but don't upload to API server."
     )
 
     parser.add_argument(
