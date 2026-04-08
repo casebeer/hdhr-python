@@ -132,12 +132,16 @@ You can also pass a `--channels <comma separated list of channels>` option with 
 
 ### Tuning
 
-Tune a modern tuner to a virtual channel:
+#### Tune a modern tuner to a virtual channel
 
     $ hdhr --host 192.0.2.123 /tuner0/vchannel 13.1
 
-Tune a legacy tuner to a virtual channel. Note that you'll need to know ahead of time what RF
-channel and/or frequency to start from (for example, from a previous channel scan):
+#### Tune a legacy tuner to a virtual channel
+
+Note that you'll need to know ahead of time what RF channel and/or frequency to start from
+(for example, from a previous channel scan).
+
+First, set the RF channel for a tuner:
 
     $ hdhr --host 192.0.2.123 /tuner0/channel auto:12
 
@@ -149,13 +153,13 @@ Now find the correct program ID for virtual channel 13.1:
 
     $ hdhr --host 192.0.2.123 /tuner0/streaminfo
     /tuner0/streaminfo
-        1: 2.1 WCBS-HD
-        2: 2.2 STARTTV
-        3: 2.3 DABL
-        4: 2.4 365BLK
-        5: 2.5 COMET
-        6: 21.2 CREATE
-        tsid=0x086D
+        3: 13.1 WNET-HD
+        4: 13.2 KIDS
+        5: 13.3 World
+        6: 21.1 WLIW-HD
+        7: 21.3 NHK
+        8: 21.4 AllArts
+        tsid=0x07DB
 
 And set that program:
 
@@ -167,11 +171,19 @@ You can now send that video to a receiver on the network:
 
 ### More complex discovery requests
 
-Note that when using the discovery API directly (i.e. when using the `--discover` or `--device`
-options), the `--host` option sets the address to which discovery requests are sent. This will
-usually be the local IPv4 broadcast address or an IPv6 mutlicast address, but could be any valid v4
-or v6 host you can reach. For example, you might be running a discovery protocol proxy on your
-network, and want to to arget discovery requests to that server.
+When using the discovery API directly (i.e. when using the `--discover` or `--device` options), the
+`--host` option sets the address to which discovery requests are sent (as opposed to normal mode,
+where `--host` specifies the host to send control commands to directly, bypassing the discovery
+procotol).
+
+The discovery host will usually be the local IPv4 broadcast address or an IPv6 mutlicast address,
+but could be any valid v4 or v6 IP address or DNS name you can reach.
+
+For example, you might be running a discovery protocol proxy on your network, and want to target
+discovery requests to that proxy server.
+
+Note that the low IP TTL hop limit of 3 set by HDHomerun devices will still limit which devices you
+are able to communicate with directly.
 
 Discover to a custom unicast address, e.g. a proxy server:
 
