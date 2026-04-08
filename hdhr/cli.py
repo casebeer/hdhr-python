@@ -12,6 +12,7 @@ import collections
 from .control import ControlClient
 from .client import HdhrClient
 from .scan import ScanManager, ScanUploadClient
+from .tuning import TunerMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +84,10 @@ async def cliClient(args) -> int:
 
     elif args.tuner_status is not None:
         data.update({ f"tunerStatus{args.tuner_status}": await client.tunerStatus(f"/tuner{args.tuner_status}") })
+
+    elif args.tuner_monitor is not None:
+        await TunerMonitor(client, f"/tuner{args.tuner_monitor}").run()
+        return
 
     elif args.endpoint is None:
         # no endpoint set, dumpe all variables
@@ -230,6 +235,13 @@ async def main() -> int:
         default=None,
         type=int,
         help="Display TunerStatus for specified tuner number"
+    )
+
+    parser.add_argument(
+        "--tuner-monitor",
+        default=None,
+        type=int,
+        help="Continuously monitor TunerStatus for specified tuner number. Ctrl-C to exit."
     )
 
     parser.add_argument(

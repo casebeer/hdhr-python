@@ -1,4 +1,5 @@
 
+import asyncio
 import collections
 from dataclasses import dataclass
 
@@ -39,6 +40,14 @@ class TunerStatus:
         return (f"LOCK: {self.lockedModulation} (ss={self.signalStrengthPercent} "
                 f"snq={self.modulationErrorRatioSnqPercent} "
                 f"seq={self.symbolErrorQualityPercent})")
+
+    def monitorFormat(self) -> str:
+        return (f"RF {self.requestedChannel} "
+                f"{self.lockedModulation}"
+                f"{f':{self.lockedFrequency}' if self.lockedFrequency else ''} "
+                f"signal={self.signalStrengthPercent} "
+                f"SNQ={self.modulationErrorRatioSnqPercent} "
+                f"SEQ={self.symbolErrorQualityPercent}")
 
     @classmethod
     def fromDebugString(cls, debugString: str) -> TunerStatus:
@@ -90,23 +99,26 @@ class TransportStreamStatus:
     transportErrorCount: int  # te
     crcErrorCount: int  # crc
 
+    def monitorFormat(self) -> str:
+        return (f"BPS={self.bitsPerSecond} "
+                f"tsErr={self.transportErrorCount} "
+                f"crcErr={self.crcErrorCount}")
+
     @classmethod
-    def fromDebugString(self, debugString: str) -> TransportStreamStatus:
+    def fromDebugString(cls, debugString: str) -> TransportStreamStatus:
         debug = parseTunerDebugString(debugString)
 
         ts = debug["ts"]
 
-        bps = tun.get("bps", None)
-        te = tun.get("te", None)
-        crc = tun.get("crc", None)
+        bps = ts.get("bps", None)
+        te = ts.get("te", None)
+        crc = ts.get("crc", None)
 
         return cls(
             bitsPerSecond=int(bps) if bps else None,
             transportErrorCount=int(te) if te else None,
             crcErrorCount=int(crc) if crc else None,
         )
-
-
 
 
 @dataclass
@@ -155,3 +167,23 @@ def parseTunerDebugString(debugString: str):
                 #print(f"[{groupName}] {key}: {value}")
                 data[groupName][key] = value
     return data
+
+class TunerMonitor:
+    '''
+    TunerMonitor realtime tuner status app
+
+    Read and display tuner status continuously.
+    '''
+    sleepIntervalSeconds = 0.1
+    def __init__(self, client, tuner):
+        self.client = client
+        self.tuner = tuner
+
+    async def run(self):
+        print("Ctrl-C to exit")
+        while True:
+            debugString = await self.client.tunerDebug(self.tuner)
+            tun = TunerStatus.fromDebugString(debugString)
+            ts = TransportStreamStatus.fromDebugString(debugString)
+            print(f"{tun.monitorFormat()} {ts.monitorFormat()}")
+            await asyncio.sleep(self.sleepIntervalSeconds)

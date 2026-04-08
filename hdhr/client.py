@@ -213,11 +213,21 @@ class HdhrClient:
     async def tunerStatus(self, tuner: str) -> tuning.TunerStatus:
         '''
         Query the device's TCP API to get current tuner status with retries
+        '''
+        return tuning.TunerStatus.fromDebugString(await self.tunerDebug(tuner))
 
-        Tuning info is the "debug" data for the current RF channel.
+    async def tunerDebug(self, tuner: str) -> str:
+        '''
+        Query the device's TCP API to get current tuner status with retries
+
+        Retry several times (or until we get a positive tuner lock status), since the tuner returns
+        modulation none/not locked while it is settling after a tuning change.
+
+        This ensures that a tunerStatus.locked == False is likely a true failure to lock.
         '''
         for retries in range(self.tuningRetries):
-            tunerStatus = await self._tunerStatusOnce(tuner)
+            debugString = await self._tunerDebugOnce(tuner)
+            tunerStatus = tuning.TunerStatus.fromDebugString(debugString)
 
             if not tunerStatus.locked:
                 await asyncio.sleep(self.tuningWaitSeconds)
@@ -225,12 +235,12 @@ class HdhrClient:
             else:
                 break
 
-        logger.debug(f"Got TunerStatus in {retries+1} attempts")
-        return tunerStatus
+        logger.debug(f"Got tuner debug data in {retries+1} attempts")
+        return debugString
 
-    async def _tunerStatusOnce(self, tuner):
-        '''Query the device's TCP API to get current tuner status'''
+    async def _tunerDebugOnce(self, tuner):
+        '''Query the device's TCP API to get current tuner debug data'''
         #self.get(fields.TunerFields.DEBUG.value.format(self.tunerNumber))
         responseData = await self.get(f"{tuner}/debug") # already processed
         debugString = responseData[f"{tuner}/debug"]
-        return tuning.TunerStatus.fromDebugString(debugString)
+        return debugString
