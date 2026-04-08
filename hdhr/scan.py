@@ -20,6 +20,7 @@ from dataclasses import dataclass, asdict
 
 logger = logging.getLogger(__name__)
 
+# todo: pull from package info
 PROJECT_NAME="hdhr-python"
 PROJECT_VERSION="2026.3.0"
 PROJECT_URI="https://github.com/casebeer/hdhr-python"
@@ -49,6 +50,23 @@ PROGRAM 8: 63.6 JTV
 PROGRAM 9: 63.7 ALIENTO
 PROGRAM 11: 63.9 KCBN
 PROGRAM 12: 63.10 WDNJ
+'''
+
+'''
+hdhomerun_config ... scan 0 output:
+...
+SCANNING: 617000000 (us-bcast:38)
+LOCK: none (ss=58 snq=0 seq=0)
+SCANNING: 605000000 (us-bcast:36)
+LOCK: 8vsb (ss=89 snq=89 seq=100)
+TSID: 0x086D
+PROGRAM 1: 2.1 WCBS-HD
+PROGRAM 2: 2.2 STARTTV
+PROGRAM 3: 2.3 DABL
+PROGRAM 4: 2.4 365BLK
+PROGRAM 5: 2.5 COMET
+PROGRAM 6: 21.2 CREATE
+...
 '''
 
 
@@ -219,6 +237,7 @@ class ScanManager:
         self.deviceAuth = discover['DEVICE_AUTH_STR']
 
         for rfChannel in rfChannels:
+            logger.info(f"SCANNING: _ ({self.channelmap}:{rfChannel})")
             await self.client.tune(self.tuner, rfChannel)
 
             tunerStatus = await self.client.tunerStatus(self.tuner)

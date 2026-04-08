@@ -137,8 +137,6 @@ class HdhrClient:
 
         Must pass a specific tuner to use. Find a free tuner with HdhrClient.getFreeTuner().
         '''
-        # logger.info(f"SCANNING: _ ({self.channelmap}:{rfChannel})")
-        logger.info(f"SCANNING: _ (RF:{rfChannel})")
         # TODO: Use high level client
         result = await self.set(f"{tuner}/channel", str(rfChannel))
         await asyncio.sleep(self.tuningWaitSeconds)
@@ -230,11 +228,10 @@ class HdhrClient:
             else:
                 break
 
-        logger.info(f"LOCK: {tunerStatus.lockedModulation} (ss={tunerStatus.signalStrengthPercent} "
-                    f"snq={tunerStatus.modulationErrorRatioSnqPercent} "
-                    f"seq={tunerStatus.symbolErrorQualityPercent}) "
-                    #f"{self.channelmap}:{tunerStatus.requestedChannel} "
-                    f"RequestedRF:{tunerStatus.requestedChannel} "
+        # output an INFO log line in a format similar to hdhomerun_config ... scan 'LOCK:' line but
+        # with extra data appended
+        logger.info(f"{tunerStatus.scanFormat()} "
+                    f"requestedRf:{tunerStatus.requestedChannel} "
                     f"{f'{tunerStatus.lockedFrequency} Hz' if tunerStatus.lockedFrequency else ''} "
                     f"({retries+1} attempts)")
         return tunerStatus

@@ -17,6 +17,29 @@ class TunerStatus:
     def locked(self) -> bool:
         return self.lockedModulation is not None
 
+    def scanFormat(self) -> str:
+        '''
+        Output LOCK: line in format output by hdhomerun_config ... scan
+
+        hdhomerun_config ... scan 0 output:
+        ...
+        SCANNING: 617000000 (us-bcast:38)
+        LOCK: none (ss=58 snq=0 seq=0)
+        SCANNING: 605000000 (us-bcast:36)
+        LOCK: 8vsb (ss=89 snq=89 seq=100)
+        TSID: 0x086D
+        PROGRAM 1: 2.1 WCBS-HD
+        PROGRAM 2: 2.2 STARTTV
+        PROGRAM 3: 2.3 DABL
+        PROGRAM 4: 2.4 365BLK
+        PROGRAM 5: 2.5 COMET
+        PROGRAM 6: 21.2 CREATE
+        ...
+        '''
+        return (f"LOCK: {self.lockedModulation} (ss={self.signalStrengthPercent} "
+                f"snq={self.modulationErrorRatioSnqPercent} "
+                f"seq={self.symbolErrorQualityPercent})")
+
     @classmethod
     def fromDebugString(cls, debugString):
         debug = parseTunerDebugString(debugString)
