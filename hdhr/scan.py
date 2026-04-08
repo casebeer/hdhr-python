@@ -19,13 +19,14 @@ from dataclasses import dataclass, asdict
 from typing import Optional, List
 
 from .tuning import TunerStatus
+from . import __version__, __user_agent_name__, __url__
 
 logger = logging.getLogger(__name__)
 
-# todo: pull from package info
-PROJECT_NAME="hdhr-python"
-PROJECT_VERSION="2026.3.0"
-PROJECT_URI="https://github.com/casebeer/hdhr-python"
+# variables for use in User-Agent string construction
+PROJECT_NAME=__user_agent_name__
+PROJECT_VERSION=__version__
+PROJECT_URI=__url__
 
 # Documented channel maps
 # us-bcast
@@ -295,7 +296,7 @@ class ScanManager:
 class ScanUploadClient:
     apiBase = "https://api.hdhomerun.com"
     #apiBase = "http://localhost:8001"
-    apiEndpoint = "/device/sync?LegacyChannelScan=1&DeviceAuth={deviceAuth}"
+    apiEndpointTemplate = "/device/sync?LegacyChannelScan=1&DeviceAuth={deviceAuth}"
     userAgent= "{projectName}/{projectVersion} {projectUri}".format(
         projectName=PROJECT_NAME,
         projectVersion=PROJECT_VERSION,
@@ -304,7 +305,7 @@ class ScanUploadClient:
 
     @classmethod
     def upload(cls, scan, deviceAuth):
-        apiUriTemplate = f"{cls.apiBase}{cls.apiEndpoint}"
+        apiUriTemplate = f"{cls.apiBase}{cls.apiEndpointTemplate}"
         apiUri = apiUriTemplate.format(deviceAuth=deviceAuth)
         #print(scan.scanUploadJson())
         logger.info(
