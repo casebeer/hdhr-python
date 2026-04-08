@@ -1,6 +1,8 @@
 
 import asyncio
 import collections
+import time
+
 from dataclasses import dataclass
 
 @dataclass
@@ -100,7 +102,7 @@ class TransportStreamStatus:
     crcErrorCount: int  # crc
 
     def monitorFormat(self) -> str:
-        return (f"BPS={self.bitsPerSecond} "
+        return (f"{self.bitsPerSecond / 2**20:.1f} Mbps "
                 f"tsErr={self.transportErrorCount} "
                 f"crcErr={self.crcErrorCount}")
 
@@ -181,9 +183,20 @@ class TunerMonitor:
 
     async def run(self):
         print("Ctrl-C to exit")
+        previous = time.time()
+        lastError = None
         while True:
             debugString = await self.client.tunerDebug(self.tuner)
             tun = TunerStatus.fromDebugString(debugString)
             ts = TransportStreamStatus.fromDebugString(debugString)
-            print(f"{tun.monitorFormat()} {ts.monitorFormat()}")
+            now = time.time() # float seconds
+            if tun.symbolErrorQualityPercent < 100:
+                lastError = now
+            interval = (now - previous)
+            frequency = 1.0 / interval
+            print(f"{time.strftime('%H:%M:%S', time.localtime(now))} "
+                  f"{tun.monitorFormat()} / TS {ts.monitorFormat()} "
+                  f"{frequency:.1f} Hz "
+                  f"{int(now - lastError) if lastError else '-'} s since symbol err")
             await asyncio.sleep(self.sleepIntervalSeconds)
+            previous = now
