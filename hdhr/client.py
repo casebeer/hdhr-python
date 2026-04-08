@@ -220,20 +220,12 @@ class HdhrClient:
             tunerStatus = await self._tunerStatusOnce(tuner)
 
             if not tunerStatus.locked:
-                #if retries < self.tuningRetries - 1:
-                #    logger.warn(f"Unable to get tuner lock, waiting before retrying...")
-
                 await asyncio.sleep(self.tuningWaitSeconds)
                 continue
             else:
                 break
 
-        # output an INFO log line in a format similar to hdhomerun_config ... scan 'LOCK:' line but
-        # with extra data appended
-        logger.info(f"{tunerStatus.scanFormat()} "
-                    f"requestedRf:{tunerStatus.requestedChannel} "
-                    f"{f'{tunerStatus.lockedFrequency} Hz' if tunerStatus.lockedFrequency else ''} "
-                    f"({retries+1} attempts)")
+        logger.debug(f"Got TunerStatus in {retries+1} attempts")
         return tunerStatus
 
     async def _tunerStatusOnce(self, tuner):

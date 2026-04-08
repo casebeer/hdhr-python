@@ -245,6 +245,13 @@ class ScanManager:
 
             tunerStatus: TunerStatus = await self.client.tunerStatus(self.tuner)
 
+            # output an INFO log line in a format similar to hdhomerun_config ... scan 'LOCK:' line
+            # but with extra data appended
+            logger.info(
+                f"{tunerStatus.scanFormat()} "
+                f"requestedRf:{tunerStatus.requestedChannel} "
+                f"{f'{tunerStatus.lockedFrequency} Hz' if tunerStatus.lockedFrequency else ''}")
+
             tsid = None
             if tunerStatus.locked:
                 tsid, programs = await self.client.streaminfo(self.tuner)
