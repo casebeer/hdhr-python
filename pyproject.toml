@@ -9,7 +9,7 @@ dependencies = []
 requires-python = ">=3.8"
 
 [project.scripts]
-hdhr = "cli:run"
+hdhr = "hdhr.cli:run"
 
-[tool.setuptools.packages.find]
-where = ["hdhr"]
+[tool.setuptools]
+packages = ["hdhr"]

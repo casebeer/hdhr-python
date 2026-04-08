@@ -41,7 +41,7 @@ class TunerStatus:
                 f"seq={self.symbolErrorQualityPercent})")
 
     @classmethod
-    def fromDebugString(cls, debugString):
+    def fromDebugString(cls, debugString: str) -> TunerStatus:
         debug = parseTunerDebugString(debugString)
 
         tun = debug["tun"]
@@ -91,7 +91,7 @@ class TransportStreamStatus:
     crcErrorCount: int  # crc
 
     @classmethod
-    def fromDebugString(self, debugString):
+    def fromDebugString(self, debugString: str) -> TransportStreamStatus:
         debug = parseTunerDebugString(debugString)
 
         ts = debug["ts"]
@@ -116,7 +116,7 @@ class NetworkStatus:
     streamStopReason: str  # stop
 
 
-def parseTunerDebugString(debugString):
+def parseTunerDebugString(debugString: str):
     '''
     Parse /tuner<n>/debug output
 

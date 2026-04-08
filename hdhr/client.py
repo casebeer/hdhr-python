@@ -1,14 +1,14 @@
 
 import asyncio
-
-import hdhr
-import tuning
-from control import ControlClient
-from discover import DiscoverClient
-import fields
+import logging
 import pprint
 
-import logging
+from . import hdhr
+from . import tuning
+from . import fields
+from .control import ControlClient
+from .discover import DiscoverClient
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_TUNER_COUNT = 2

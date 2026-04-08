@@ -2,6 +2,7 @@
 Based on
 https://github.com/Silicondust/libhdhomerun/blob/b0e5d5f5c8e2bf37dea34beb014e08ebb598ebf6/hdhomerun_pkt.h
 '''
+import logging
 import struct
 import zlib
 
@@ -9,7 +10,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import List
 
-import logging
 logger = logging.getLogger(__name__)
 
 

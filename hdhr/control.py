@@ -4,8 +4,8 @@ import socket
 import pprint
 import os
 
-import hdhr
-import fields
+from . import hdhr
+from . import fields
 
 import logging
 logger = logging.getLogger(__name__)

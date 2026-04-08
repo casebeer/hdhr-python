@@ -12,11 +12,13 @@ import pprint
 import collections
 import json
 import urllib.request
-from typing import Optional, List
 import re
 import time
 
 from dataclasses import dataclass, asdict
+from typing import Optional, List
+
+from .tuning import TunerStatus
 
 logger = logging.getLogger(__name__)
 
@@ -229,7 +231,7 @@ class ScanManager:
 
         return {"lineup": self.channelScan}
 
-    async def rfScan(self, rfChannels):
+    async def rfScan(self, rfChannels: list[int]) -> ChannelScan:
         lineup = []
 
         discover = await self.client.discoverOne() # target host from HdhrClient.host
@@ -240,7 +242,7 @@ class ScanManager:
             logger.info(f"SCANNING: _ ({self.channelmap}:{rfChannel})")
             await self.client.tune(self.tuner, rfChannel)
 
-            tunerStatus = await self.client.tunerStatus(self.tuner)
+            tunerStatus: TunerStatus = await self.client.tunerStatus(self.tuner)
 
             tsid = None
             if tunerStatus.locked:

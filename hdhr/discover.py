@@ -8,7 +8,7 @@ import ipaddress
 import os
 import re
 
-import hdhr
+from . import hdhr
 
 logger = logging.getLogger(__name__)
 

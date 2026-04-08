@@ -9,9 +9,9 @@ import json
 import textwrap
 import collections
 
-from control import ControlClient
-from client import HdhrClient
-from scan import ScanManager
+from .control import ControlClient
+from .client import HdhrClient
+from .scan import ScanManager
 
 logger = logging.getLogger(__name__)
 
